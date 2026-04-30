@@ -133,10 +133,18 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
-              <span className="hidden sm:inline">Auto-génération 9h Paris</span>
-              <span className="sm:hidden">Auto · 9h</span>
+            <div className="flex items-center gap-3 text-xs">
+              <Link
+                href="/learnings"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-800 hover:border-amber-400/40 hover:bg-amber-400/5 text-zinc-400 hover:text-amber-300 font-semibold transition-colors"
+              >
+                <span>🧠</span>
+                <span>Mémoire</span>
+              </Link>
+              <div className="hidden sm:flex items-center gap-1.5 text-zinc-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
+                <span>Auto 9h Paris</span>
+              </div>
             </div>
           </div>
 

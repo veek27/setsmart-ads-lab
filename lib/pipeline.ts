@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase";
 import { generateConcepts, type Concept } from "./concepts";
+import { extractLearnings } from "./learnings";
 
 export type RunResult = {
   date: string;
@@ -99,6 +100,12 @@ export async function runDailyBatch(): Promise<RunResult> {
 
   let concepts: Concept[];
   try {
+    try {
+      await extractLearnings();
+    } catch (e) {
+      console.warn("[pipeline] learnings extraction failed:", e);
+    }
+
     const [learnings, recentConcepts] = await Promise.all([
       getRecentLearnings(),
       getRecentConcepts(14),
