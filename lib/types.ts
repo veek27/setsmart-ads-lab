@@ -20,6 +20,19 @@ export type Ad = {
   png_url_fr: string | null;
   png_url_en: string | null;
   position: number | null;
+  status: "pending" | "validated" | "declined";
+  version: number;
+  created_at: string;
+};
+
+export type AdVersion = {
+  id: string;
+  ad_id: string;
+  version: number;
+  hook_fr: string | null;
+  hook_en: string | null;
+  brief: string | null;
+  correction_notes: string | null;
   created_at: string;
 };
 

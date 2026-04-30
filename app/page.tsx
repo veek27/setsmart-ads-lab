@@ -161,24 +161,30 @@ export default async function Home() {
           </div>
 
           {/* Stats bar */}
-          <div className="grid grid-cols-3 gap-3 mt-8">
+          <div className="grid grid-cols-4 gap-3 mt-8">
             <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-              <div className="text-2xl font-black tracking-tight">
-                {ads.length}
+              <div className="text-2xl font-black tracking-tight text-zinc-400">
+                {ads.filter((a) => a.status === "pending").length}
               </div>
-              <div className="text-xs text-zinc-500 mt-1">Concepts générés</div>
+              <div className="text-xs text-zinc-500 mt-1">À traiter</div>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-              <div className="text-2xl font-black tracking-tight">
-                {Object.values(feedbackCounts).reduce((a, b) => a + b, 0)}
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <div className="text-2xl font-black tracking-tight text-emerald-300">
+                {ads.filter((a) => a.status === "validated").length}
               </div>
-              <div className="text-xs text-zinc-500 mt-1">Feedbacks reçus</div>
+              <div className="text-xs text-emerald-400/70 mt-1">Validées</div>
+            </div>
+            <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
+              <div className="text-2xl font-black tracking-tight text-rose-300">
+                {ads.filter((a) => a.status === "declined").length}
+              </div>
+              <div className="text-xs text-rose-400/70 mt-1">Déclinées</div>
             </div>
             <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
               <div className="text-2xl font-black tracking-tight">
                 {totalBatches}
               </div>
-              <div className="text-xs text-zinc-500 mt-1">Batches au total</div>
+              <div className="text-xs text-zinc-500 mt-1">Batches</div>
             </div>
           </div>
         </header>
@@ -199,7 +205,6 @@ export default async function Home() {
               const brief = parseBrief(ad.brief);
               const accent =
                 ACCENT_COLORS[brief?.accent_color || "amber"] || "#fbbf24";
-              const fbCount = feedbackCounts[ad.id] || 0;
               return (
                 <Link
                   key={ad.id}
@@ -214,13 +219,23 @@ export default async function Home() {
                     </span>
                   </div>
 
-                  {fbCount > 0 && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <span className="text-[10px] font-bold bg-emerald-500/90 backdrop-blur text-black px-2 py-1 rounded-md">
-                        {fbCount} ✓
+                  <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+                    {ad.version > 1 && (
+                      <span className="text-[10px] font-bold bg-amber-400/95 backdrop-blur text-black px-2 py-1 rounded-md">
+                        v{ad.version}
                       </span>
-                    </div>
-                  )}
+                    )}
+                    {ad.status === "validated" && (
+                      <span className="text-[10px] font-bold bg-emerald-500/95 backdrop-blur text-black px-2 py-1 rounded-md">
+                        ✓
+                      </span>
+                    )}
+                    {ad.status === "declined" && (
+                      <span className="text-[10px] font-bold bg-rose-500/95 backdrop-blur text-white px-2 py-1 rounded-md">
+                        ✗
+                      </span>
+                    )}
+                  </div>
 
                   {/* Visual preview */}
                   <div className="absolute inset-0 flex items-start justify-center pointer-events-none">
