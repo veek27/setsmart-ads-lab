@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { parseBrief, ACCENT_COLORS, type Ad, type Batch } from "@/lib/types";
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,6 +19,8 @@ function todayParis(): string {
 async function getLatestBatch(): Promise<{
   batch: Batch | null;
   ads: Ad[];
+  feedbackCounts: Record<string, number>;
+  totalBatches: number;
 }> {
   const sb = supabaseAdmin();
   const today = todayParis();
@@ -30,7 +33,18 @@ async function getLatestBatch(): Promise<{
     .limit(1)
     .maybeSingle();
 
-  if (!batch) return { batch: null, ads: [] };
+  const { count: totalBatches } = await sb
+    .from("batches")
+    .select("*", { count: "exact", head: true });
+
+  if (!batch) {
+    return {
+      batch: null,
+      ads: [],
+      feedbackCounts: {},
+      totalBatches: totalBatches || 0,
+    };
+  }
 
   const { data: ads } = await sb
     .from("ads")
@@ -38,22 +52,53 @@ async function getLatestBatch(): Promise<{
     .eq("batch_id", batch.id)
     .order("position");
 
-  return { batch: batch as Batch, ads: (ads as Ad[]) || [] };
+  const adIds = (ads || []).map((a) => a.id);
+  const feedbackCounts: Record<string, number> = {};
+  if (adIds.length > 0) {
+    const { data: fb } = await sb
+      .from("feedback")
+      .select("ad_id")
+      .in("ad_id", adIds);
+    for (const f of fb || []) {
+      feedbackCounts[f.ad_id] = (feedbackCounts[f.ad_id] || 0) + 1;
+    }
+  }
+
+  return {
+    batch: batch as Batch,
+    ads: (ads as Ad[]) || [],
+    feedbackCounts,
+    totalBatches: totalBatches || 0,
+  };
 }
 
+const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending: { label: "En attente", cls: "text-zinc-400 bg-zinc-800" },
+  running: { label: "Génération…", cls: "text-amber-300 bg-amber-500/10" },
+  done: { label: "Prêt", cls: "text-emerald-400 bg-emerald-500/10" },
+  failed: { label: "Échec", cls: "text-rose-400 bg-rose-500/10" },
+};
+
 export default async function Home() {
-  const { batch, ads } = await getLatestBatch();
+  const { batch, ads, feedbackCounts, totalBatches } = await getLatestBatch();
 
   if (!batch) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center font-sans">
+      <main className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center px-6">
-          <div className="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 mb-6">
-            SetSmart · Ads Lab
+          <Image
+            src="/logo-setsmart.png"
+            alt="SetSmart"
+            width={56}
+            height={56}
+            className="mx-auto mb-6 rounded-xl brand-glow"
+          />
+          <div className="inline-block rounded-full bg-amber-400/10 border border-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300 mb-6">
+            ADS LAB
           </div>
           <h1 className="text-3xl font-bold mb-3">Aucun batch encore.</h1>
-          <p className="text-zinc-400">
-            Le premier batch sera généré au prochain cron (9h heure Paris).
+          <p className="text-zinc-500">
+            Le premier batch sera généré au prochain cron — 9h, heure de Paris.
           </p>
         </div>
       </main>
@@ -62,77 +107,161 @@ export default async function Home() {
 
   const friendlyDate = new Date(batch.date + "T12:00:00").toLocaleDateString(
     "fr-FR",
-    {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }
+    { weekday: "long", day: "numeric", month: "long" }
   );
+  const status = STATUS_LABEL[batch.status] || STATUS_LABEL.pending;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
+    <main className="min-h-screen">
       <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Brand header */}
         <header className="mb-12">
-          <div className="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 mb-3">
-            SetSmart · Ads Lab
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo-setsmart.png"
+                alt="SetSmart"
+                width={40}
+                height={40}
+                className="rounded-lg brand-glow"
+              />
+              <div>
+                <div className="text-sm font-bold tracking-tight">SetSmart</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-amber-400 font-semibold">
+                  Ads Lab
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
+              <span className="hidden sm:inline">Auto-génération 9h Paris</span>
+              <span className="sm:hidden">Auto · 9h</span>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">
-            Batch du {friendlyDate}
-          </h1>
-          <div className="flex gap-4 mt-3 text-sm text-zinc-400">
-            <span>{ads.length} concepts</span>
-            <span>·</span>
-            <span>
-              Statut :{" "}
-              <span className="text-emerald-400 font-medium">
-                {batch.status}
-              </span>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-zinc-500 font-semibold mb-2">
+                Batch du jour
+              </div>
+              <h1 className="text-5xl sm:text-6xl font-black tracking-tight leading-[0.95] mb-1">
+                <span className="text-amber-400">{friendlyDate.split(" ")[0]}</span>{" "}
+                <span className="text-white">
+                  {friendlyDate.split(" ").slice(1).join(" ")}
+                </span>
+              </h1>
+            </div>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${status.cls} self-start`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {status.label}
             </span>
+          </div>
+
+          {/* Stats bar */}
+          <div className="grid grid-cols-3 gap-3 mt-8">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+              <div className="text-2xl font-black tracking-tight">
+                {ads.length}
+              </div>
+              <div className="text-xs text-zinc-500 mt-1">Concepts générés</div>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+              <div className="text-2xl font-black tracking-tight">
+                {Object.values(feedbackCounts).reduce((a, b) => a + b, 0)}
+              </div>
+              <div className="text-xs text-zinc-500 mt-1">Feedbacks reçus</div>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+              <div className="text-2xl font-black tracking-tight">
+                {totalBatches}
+              </div>
+              <div className="text-xs text-zinc-500 mt-1">Batches au total</div>
+            </div>
           </div>
         </header>
 
-        <div className="grid gap-4">
-          {ads.map((ad) => {
-            const brief = parseBrief(ad.brief);
-            const accent =
-              ACCENT_COLORS[brief?.accent_color || "emerald"] || "#10b981";
-            return (
-              <Link
-                key={ad.id}
-                href={`/ad/${ad.id}`}
-                className="block rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 hover:border-zinc-700 transition-colors"
-              >
-                <div className="flex items-start gap-4">
+        {/* Concepts grid */}
+        <section>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-400">
+              Les 10 concepts
+            </h2>
+            <span className="text-xs text-zinc-600">
+              Clique pour voir + donner ton feedback
+            </span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            {ads.map((ad) => {
+              const brief = parseBrief(ad.brief);
+              const accent =
+                ACCENT_COLORS[brief?.accent_color || "amber"] || "#fbbf24";
+              const fbCount = feedbackCounts[ad.id] || 0;
+              return (
+                <Link
+                  key={ad.id}
+                  href={`/ad/${ad.id}`}
+                  className="group relative block rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-950 to-black p-5 hover:border-zinc-600 transition-all hover:-translate-y-0.5 overflow-hidden"
+                >
                   <div
-                    className="shrink-0 w-1 self-stretch rounded-full"
+                    className="absolute top-0 left-0 right-0 h-[2px] opacity-50 group-hover:opacity-100 transition-opacity"
                     style={{ background: accent }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-mono text-zinc-500">
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-zinc-600 font-semibold">
                         #{ad.position?.toString().padStart(2, "0")}
                       </span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider"
+                        style={{
+                          background: `${accent}15`,
+                          color: accent,
+                          border: `1px solid ${accent}30`,
+                        }}
+                      >
                         {brief?.format || "—"}
                       </span>
-                      <span className="text-xs text-zinc-500">{ad.slug}</span>
                     </div>
-                    <h2 className="text-xl font-bold mb-1">
-                      {ad.hook_fr || ad.concept}
-                    </h2>
-                    {ad.hook_en && (
-                      <p className="text-sm text-zinc-500 mb-3 italic">
-                        EN — {ad.hook_en}
-                      </p>
+                    {fbCount > 0 && (
+                      <span className="text-[10px] text-emerald-400 font-semibold">
+                        {fbCount} feedback{fbCount > 1 ? "s" : ""}
+                      </span>
                     )}
-                    <p className="text-sm text-zinc-400">{ad.concept}</p>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+
+                  <h3 className="text-lg font-bold leading-tight mb-2 group-hover:text-white text-zinc-100">
+                    {ad.hook_fr}
+                  </h3>
+                  {ad.hook_en && (
+                    <div className="text-xs text-zinc-500 italic mb-3">
+                      {ad.hook_en}
+                    </div>
+                  )}
+                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                    {ad.concept}
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-zinc-600 group-hover:text-amber-400 transition-colors">
+                    Ouvrir
+                    <span className="group-hover:translate-x-1 transition-transform">
+                      →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <footer className="mt-16 pt-8 border-t border-zinc-900 text-center">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-700">
+            SetSmart · Ads Lab · v0.1
+          </div>
+        </footer>
       </div>
     </main>
   );
