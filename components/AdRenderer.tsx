@@ -491,38 +491,66 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
     <>
       <Logo />
       <MiddleColumn>
-        <Hook text={hook} highlight={highlight} accent={accent} size={28} />
+        <Hook text={hook} highlight={highlight} accent={accent} size={26} />
         <div
           style={{
             background: "#fff",
             borderRadius: 16,
-            padding: 16,
+            padding: "12px 14px",
             boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
           }}
         >
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              marginBottom: 8,
+              paddingBottom: 8,
+              borderBottom: "1px solid #f4f5f7",
+            }}
+          >
             <div
               style={{
-                width: 28,
-                height: 28,
+                width: 26,
+                height: 26,
                 borderRadius: 999,
                 background: accent,
               }}
             />
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>SetSmart</div>
-              <div style={{ fontSize: 9, color: "#71717a" }}>Active now</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700 }}>SetSmart</div>
+              <div style={{ fontSize: 9, color: "#10b981" }}>● Active</div>
             </div>
           </div>
           <Bubble side="them" text="Hey 👋 Tu cherches quoi ?" />
           <Bubble side="me" text="Plus de leads qualifiés" />
-          <Bubble side="them" text="Quel budget/mois ?" />
+          <Bubble side="them" text="Quel budget pub/mois ?" />
           <Bubble side="me" text="3-5k €" />
+          <Bubble side="them" text="Tu fais ça depuis combien ?" />
+          <Bubble side="me" text="2 ans" />
           <Bubble
             side="them"
-            text="Parfait. Slot demain 14h ?"
-            highlight={accent}
+            text="Parfait. Demain 14h ça marche ?"
           />
+          <Bubble side="me" text="✅ Oui" />
+          <div
+            style={{
+              marginTop: 6,
+              padding: "8px 10px",
+              background: `${accent}15`,
+              border: `1.5px solid ${accent}`,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 11,
+              fontWeight: 700,
+              color: NAVY,
+            }}
+          >
+            <span style={{ fontSize: 14 }}>📅</span>
+            <span>RDV pris · Demain 14:00</span>
+          </div>
         </div>
         <div
           style={{
