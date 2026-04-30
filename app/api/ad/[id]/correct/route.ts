@@ -109,6 +109,20 @@ export async function POST(
       .eq("ad_id", id)
       .eq("version", ad.version);
 
+    const { error: feedbackErr } = await sb.from("feedback").insert({
+      ad_id: id,
+      verdict: "pivot",
+      notes: JSON.stringify({
+        action: "correct",
+        general: notes,
+        from_version: ad.version,
+        to_version: ad.version + 1,
+      }),
+    });
+    if (feedbackErr) {
+      console.error("[correct] feedback insert failed:", feedbackErr);
+    }
+
     return NextResponse.json({
       ok: true,
       newVersion: ad.version + 1,

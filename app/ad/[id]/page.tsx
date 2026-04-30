@@ -4,6 +4,7 @@ import {
   ACCENT_COLORS,
   type Ad,
   type AdVersion,
+  type FeedbackRow,
 } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,6 +20,7 @@ type Params = { id: string };
 async function getAd(id: string): Promise<{
   ad: Ad | null;
   versions: AdVersion[];
+  feedback: FeedbackRow[];
 }> {
   const sb = supabaseAdmin();
   const { data: ad } = await sb
@@ -27,18 +29,42 @@ async function getAd(id: string): Promise<{
     .eq("id", id)
     .maybeSingle();
 
-  if (!ad) return { ad: null, versions: [] };
+  if (!ad) return { ad: null, versions: [], feedback: [] };
 
-  const { data: versions } = await sb
-    .from("ad_versions")
-    .select("*")
-    .eq("ad_id", id)
-    .order("version", { ascending: false });
+  const [versionsRes, feedbackRes] = await Promise.all([
+    sb
+      .from("ad_versions")
+      .select("*")
+      .eq("ad_id", id)
+      .order("version", { ascending: false }),
+    sb
+      .from("feedback")
+      .select("*")
+      .eq("ad_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   return {
     ad: ad as Ad,
-    versions: (versions as AdVersion[]) || [],
+    versions: (versionsRes.data as AdVersion[]) || [],
+    feedback: (feedbackRes.data as FeedbackRow[]) || [],
   };
+}
+
+function parseNotes(raw: string | null): {
+  action?: string;
+  general?: string;
+  design?: string;
+  copy?: string;
+  from_version?: number;
+  to_version?: number;
+} {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { general: raw };
+  }
 }
 
 const STATUS_CONFIG = {
@@ -62,7 +88,7 @@ export default async function AdPage({
   params: Promise<Params>;
 }) {
   const { id } = await params;
-  const { ad, versions } = await getAd(id);
+  const { ad, versions, feedback } = await getAd(id);
 
   if (!ad) notFound();
 
@@ -193,6 +219,71 @@ export default async function AdPage({
           </div>
           <Actions adId={ad.id} initialStatus={ad.status} />
         </div>
+
+        {/* Feedback log */}
+        {feedback.length > 0 && (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-6 mb-8">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+              <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-zinc-400">
+                Mémoire — tes notes ({feedback.length})
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {feedback.map((f) => {
+                const n = parseNotes(f.notes);
+                const date = new Date(f.created_at).toLocaleString("fr-FR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                });
+                const cfg =
+                  n.action === "validate" || f.verdict === "keep"
+                    ? {
+                        icon: "✅",
+                        label: "Validation",
+                        cls: "text-emerald-300 bg-emerald-500/5 border-emerald-500/20",
+                      }
+                    : n.action === "decline" || f.verdict === "kill"
+                      ? {
+                          icon: "❌",
+                          label: "Déclinée",
+                          cls: "text-rose-300 bg-rose-500/5 border-rose-500/20",
+                        }
+                      : {
+                          icon: "🔄",
+                          label: "Correction",
+                          cls: "text-amber-300 bg-amber-500/5 border-amber-500/20",
+                        };
+                return (
+                  <div
+                    key={f.id}
+                    className={`rounded-xl border p-4 ${cfg.cls}`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2 flex-wrap text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{cfg.icon}</span>
+                        <span className="font-bold uppercase tracking-wider text-[10px]">
+                          {cfg.label}
+                        </span>
+                        {n.from_version && n.to_version && (
+                          <span className="text-[10px] text-zinc-500">
+                            v{n.from_version} → v{n.to_version}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-zinc-500">{date}</span>
+                    </div>
+                    {n.general && (
+                      <div className="text-sm text-zinc-200 leading-relaxed">
+                        {n.general}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Version history */}
         {versions.length > 0 && (
