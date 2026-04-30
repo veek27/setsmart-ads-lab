@@ -29,6 +29,37 @@ async function getRecentLearnings(): Promise<string> {
   return data.map((l) => `- ${l.pattern} (seen ${l.frequency}×)`).join("\n");
 }
 
+async function getRecentConcepts(days = 14): Promise<string> {
+  const sb = supabaseAdmin();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+  const { data: batches } = await sb
+    .from("batches")
+    .select("id, date")
+    .gte("date", cutoffDate)
+    .order("date", { ascending: false });
+
+  if (!batches || batches.length === 0) return "";
+
+  const ids = batches.map((b) => b.id);
+  const { data: ads } = await sb
+    .from("ads")
+    .select("slug, concept, hook_fr, hook_en, batch_id")
+    .in("batch_id", ids)
+    .limit(200);
+
+  if (!ads || ads.length === 0) return "";
+
+  return ads
+    .map(
+      (a) =>
+        `- [${a.slug}] ${a.concept} | FR: "${a.hook_fr}" | EN: "${a.hook_en}"`
+    )
+    .join("\n");
+}
+
 export async function runDailyBatch(): Promise<RunResult> {
   const started = Date.now();
   const sb = supabaseAdmin();
@@ -68,8 +99,11 @@ export async function runDailyBatch(): Promise<RunResult> {
 
   let concepts: Concept[];
   try {
-    const learnings = await getRecentLearnings();
-    concepts = await generateConcepts(learnings);
+    const [learnings, recentConcepts] = await Promise.all([
+      getRecentLearnings(),
+      getRecentConcepts(14),
+    ]);
+    concepts = await generateConcepts(learnings, recentConcepts);
   } catch (e) {
     await sb.from("batches").update({ status: "failed" }).eq("id", batch.id);
     throw e;

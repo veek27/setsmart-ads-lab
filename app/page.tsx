@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { parseBrief, ACCENT_COLORS, type Ad, type Batch } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
+import AdPreview from "@/components/AdPreview";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -193,7 +194,7 @@ export default async function Home() {
             </span>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {ads.map((ad) => {
               const brief = parseBrief(ad.brief);
               const accent =
@@ -203,53 +204,56 @@ export default async function Home() {
                 <Link
                   key={ad.id}
                   href={`/ad/${ad.id}`}
-                  className="group relative block rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-950 to-black p-5 hover:border-zinc-600 transition-all hover:-translate-y-0.5 overflow-hidden"
+                  className="group relative block rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-900 hover:border-zinc-600 transition-all hover:-translate-y-1 hover:shadow-2xl"
+                  style={{ aspectRatio: "9/16" }}
                 >
-                  <div
-                    className="absolute top-0 left-0 right-0 h-[2px] opacity-50 group-hover:opacity-100 transition-opacity"
-                    style={{ background: accent }}
-                  />
+                  {/* Position badge */}
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-bold bg-black/70 backdrop-blur text-white px-2 py-1 rounded-md">
+                      #{ad.position?.toString().padStart(2, "0")}
+                    </span>
+                  </div>
 
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-zinc-600 font-semibold">
-                        #{ad.position?.toString().padStart(2, "0")}
+                  {fbCount > 0 && (
+                    <div className="absolute top-2 right-2 z-20">
+                      <span className="text-[10px] font-bold bg-emerald-500/90 backdrop-blur text-black px-2 py-1 rounded-md">
+                        {fbCount} ✓
                       </span>
+                    </div>
+                  )}
+
+                  {/* Visual preview */}
+                  <div className="absolute inset-0 flex items-start justify-center pointer-events-none">
+                    {brief && (
+                      <AdPreview
+                        format={brief.format}
+                        accent={accent}
+                        accentName={brief.accent_color}
+                        hook={ad.hook_fr || ""}
+                        body={brief.body_fr}
+                        cta={brief.cta_fr}
+                        lang="fr"
+                        scale={0.4}
+                      />
+                    )}
+                  </div>
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/80 to-transparent pt-12 pb-3 px-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1.5 mb-1.5">
                       <span
-                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider"
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
                         style={{
-                          background: `${accent}15`,
+                          background: `${accent}20`,
                           color: accent,
-                          border: `1px solid ${accent}30`,
                         }}
                       >
                         {brief?.format || "—"}
                       </span>
                     </div>
-                    {fbCount > 0 && (
-                      <span className="text-[10px] text-emerald-400 font-semibold">
-                        {fbCount} feedback{fbCount > 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-lg font-bold leading-tight mb-2 group-hover:text-white text-zinc-100">
-                    {ad.hook_fr}
-                  </h3>
-                  {ad.hook_en && (
-                    <div className="text-xs text-zinc-500 italic mb-3">
-                      {ad.hook_en}
-                    </div>
-                  )}
-                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
-                    {ad.concept}
-                  </p>
-
-                  <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-zinc-600 group-hover:text-amber-400 transition-colors">
-                    Ouvrir
-                    <span className="group-hover:translate-x-1 transition-transform">
-                      →
-                    </span>
+                    <h3 className="text-xs font-bold leading-tight line-clamp-2 text-white">
+                      {ad.hook_fr}
+                    </h3>
                   </div>
                 </Link>
               );

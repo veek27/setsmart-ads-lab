@@ -15,9 +15,10 @@ export type Concept = {
 };
 
 export async function generateConcepts(
-  recentLearnings: string = ""
+  recentLearnings: string = "",
+  recentConcepts: string = ""
 ): Promise<Concept[]> {
-  const prompt = buildBatchPrompt(recentLearnings);
+  const prompt = buildBatchPrompt(recentLearnings, recentConcepts);
 
   const response = await anthropic.messages.create({
     model: MODEL,

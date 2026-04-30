@@ -54,7 +54,10 @@ Copy rules:
 - French and English convey the SAME idea, not literal translations.
 `.trim();
 
-export const buildBatchPrompt = (recentLearnings: string) => `
+export const buildBatchPrompt = (
+  recentLearnings: string,
+  recentConcepts: string
+) => `
 You are generating 10 distinct ad concepts for SetSmart's daily marketing batch.
 
 # Product context
@@ -65,6 +68,11 @@ ${STYLE_GUIDE}
 
 # What I learned from past batches
 ${recentLearnings || "(no feedback yet — first batch)"}
+
+# Concepts already produced in the last 14 days — DO NOT REPEAT
+${recentConcepts || "(none — this is the first batch)"}
+
+These have already been shown. Pick fundamentally different angles, formats, hooks, stats, narratives. If a hook line is similar to one above, REJECT it. If a format has been used in last 7 days for this same value-prop, pick another.
 
 # Your task
 Generate exactly 10 ad concepts. Each concept must be ANGLED differently — don't make 10 variations of the same idea. Mix:
