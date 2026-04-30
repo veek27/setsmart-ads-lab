@@ -79,6 +79,7 @@ function SafeZone({ children }: { children: React.ReactNode }) {
         zIndex: 30,
         display: "flex",
         flexDirection: "column",
+        justifyContent: "space-between",
         overflow: "hidden",
       }}
     >
@@ -223,10 +224,10 @@ function pickHighlight(hook: string): string | undefined {
 
 function MiddleColumn({
   children,
-  spread = false,
+  align = "center",
 }: {
   children: React.ReactNode;
-  spread?: boolean;
+  align?: "center" | "stretch" | "spread";
 }) {
   return (
     <div
@@ -234,9 +235,14 @@ function MiddleColumn({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        justifyContent: spread ? "space-between" : "center",
-        gap: spread ? 0 : 16,
-        padding: "16px 0",
+        justifyContent:
+          align === "spread"
+            ? "space-between"
+            : align === "stretch"
+              ? "stretch"
+              : "center",
+        gap: 14,
+        padding: "12px 0",
         minHeight: 0,
         overflow: "hidden",
       }}
@@ -314,14 +320,33 @@ function StatStage({ hook, body, cta, accent }: StageProps) {
   return (
     <>
       <Logo />
-      <MiddleColumn>
-        <div style={{ textAlign: "center" }}>
+      <MiddleColumn align="spread">
+        <div
+          style={{
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
           <div
             style={{
-              fontSize: 130,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 2,
+              color: accent,
+              textTransform: "uppercase",
+            }}
+          >
+            ▌ Stat du jour
+          </div>
+          <div
+            style={{
+              fontSize: 160,
               fontWeight: 900,
-              letterSpacing: -6,
-              lineHeight: 0.92,
+              letterSpacing: -8,
+              lineHeight: 0.88,
               color: NAVY,
             }}
           >
@@ -330,12 +355,12 @@ function StatStage({ hook, body, cta, accent }: StageProps) {
           {rest && (
             <div
               style={{
-                fontSize: 24,
+                fontSize: 26,
                 fontWeight: 800,
-                marginTop: 12,
                 color: NAVY,
                 letterSpacing: -0.5,
                 lineHeight: 1.05,
+                marginTop: 4,
               }}
             >
               {rest}
@@ -344,12 +369,15 @@ function StatStage({ hook, body, cta, accent }: StageProps) {
         </div>
         <div
           style={{
+            background: "#fff",
+            borderRadius: 14,
+            padding: "14px 18px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
             textAlign: "center",
-            fontSize: 17,
+            fontSize: 16,
             fontWeight: 600,
-            color: "#3f3f46",
+            color: NAVY,
             lineHeight: 1.35,
-            padding: "0 8px",
           }}
         >
           {body}
@@ -844,53 +872,96 @@ function ComparisonStage({
   );
 }
 
-function TweetStage({ hook, body, cta, accent, highlight }: StageProps) {
+function TweetStage({ hook, body, cta, accent, highlight, lang }: StageProps) {
   return (
     <>
       <Logo />
-      <MiddleColumn>
+      <MiddleColumn align="stretch">
         <div
           style={{
+            flex: 1,
             background: "#fff",
-            borderRadius: 16,
-            padding: 18,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+            borderRadius: 18,
+            padding: "20px 22px",
+            boxShadow: "0 12px 32px rgba(0,0,0,0.10)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: 14,
           }}
         >
+          <div>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 999,
+                  background: `linear-gradient(135deg, ${accent}, ${accent}90)`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: 900,
+                }}
+              >
+                F
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>
+                  {lang === "fr" ? "Founder anonyme" : "Anonymous founder"}
+                </div>
+                <div style={{ fontSize: 11, color: "#71717a" }}>
+                  @founder · 2h
+                </div>
+              </div>
+              <div
+                style={{
+                  fontSize: 18,
+                  color: "#71717a",
+                  letterSpacing: 2,
+                }}
+              >
+                ···
+              </div>
+            </div>
+            <Hook text={hook} highlight={highlight} accent={accent} size={26} />
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: 14,
+                fontWeight: 500,
+                color: "#3f3f46",
+                lineHeight: 1.45,
+              }}
+            >
+              {body}
+            </div>
+          </div>
           <div
             style={{
               display: "flex",
-              gap: 10,
+              justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 12,
+              paddingTop: 14,
+              borderTop: "1px solid #f4f5f7",
+              fontSize: 11,
+              color: "#71717a",
+              fontWeight: 600,
             }}
           >
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 999,
-                background: "#e5e7eb",
-              }}
-            />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800 }}>
-                Founder Anonyme
-              </div>
-              <div style={{ fontSize: 10, color: "#71717a" }}>· 2h</div>
-            </div>
-          </div>
-          <Hook text={hook} highlight={highlight} accent={accent} size={22} />
-          <div
-            style={{
-              marginTop: 10,
-              fontSize: 13,
-              fontWeight: 500,
-              color: "#3f3f46",
-              lineHeight: 1.4,
-            }}
-          >
-            {body}
+            <span>💬 247</span>
+            <span>🔁 1.2k</span>
+            <span style={{ color: accent }}>♥ 8.4k</span>
+            <span>👁 142k</span>
           </div>
         </div>
       </MiddleColumn>
@@ -899,37 +970,67 @@ function TweetStage({ hook, body, cta, accent, highlight }: StageProps) {
   );
 }
 
-function QuoteStage({ hook, body, cta, accent, highlight }: StageProps) {
+function QuoteStage({ hook, body, cta, accent, highlight, lang }: StageProps) {
   return (
     <>
       <Logo />
-      <MiddleColumn>
+      <MiddleColumn align="spread">
         <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 90,
               color: accent,
-              lineHeight: 0.9,
+              lineHeight: 0.7,
               fontWeight: 900,
-              marginBottom: 4,
+              opacity: 0.9,
             }}
           >
             &ldquo;
           </div>
-          <Hook text={hook} highlight={highlight} accent={accent} size={36} />
         </div>
-        <div
-          style={{
-            fontSize: 16,
-            fontWeight: 500,
-            color: "#3f3f46",
-            fontStyle: "italic",
-            lineHeight: 1.4,
-            textAlign: "center",
-            padding: "0 8px",
-          }}
-        >
-          {body}
+        <Hook text={hook} highlight={highlight} accent={accent} size={40} />
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 500,
+              color: "#3f3f46",
+              fontStyle: "italic",
+              lineHeight: 1.4,
+              padding: "0 12px",
+              marginBottom: 16,
+            }}
+          >
+            {body}
+          </div>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 16px",
+              background: "#fff",
+              borderRadius: 999,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                background: `linear-gradient(135deg, ${accent}, ${accent}90)`,
+              }}
+            />
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: NAVY }}>
+                {lang === "fr" ? "Founder, agency 7-figures" : "Founder, 7-fig agency"}
+              </div>
+              <div style={{ fontSize: 10, color: "#71717a" }}>
+                {lang === "fr" ? "Client SetSmart" : "SetSmart customer"}
+              </div>
+            </div>
+          </div>
         </div>
       </MiddleColumn>
       <Cta text={cta} accent={accent} />
