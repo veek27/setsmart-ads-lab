@@ -256,6 +256,7 @@ export default async function Home() {
                         body={brief.body_fr}
                         cta={brief.cta_fr}
                         lang="fr"
+                        meta={brief.meta}
                         scale={0.4}
                       />
                     )}

@@ -1,3 +1,37 @@
+export type Meta = {
+  rows?: Array<{
+    label_fr: string;
+    label_en: string;
+    h_fr: string;
+    h_en: string;
+    a_fr: string;
+    a_en: string;
+  }>;
+  tiers?: Array<{
+    tier: string;
+    label_fr: string;
+    label_en: string;
+  }>;
+  messages?: Array<{
+    side: "me" | "them";
+    text_fr: string;
+    text_en: string;
+  }>;
+  steps?: Array<{
+    time: string;
+    text_fr: string;
+    text_en: string;
+  }>;
+  before_fr?: string;
+  before_en?: string;
+  after_fr?: string;
+  after_en?: string;
+  left_fr?: string;
+  left_en?: string;
+  right_fr?: string;
+  right_en?: string;
+};
+
 export type Brief = {
   format: string;
   accent_color: string;
@@ -5,6 +39,7 @@ export type Brief = {
   body_en: string;
   cta_fr: string;
   cta_en: string;
+  meta?: Meta;
 };
 
 export type Ad = {

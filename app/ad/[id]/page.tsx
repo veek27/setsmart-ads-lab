@@ -190,6 +190,7 @@ export default async function AdPage({
                     body={body || ""}
                     cta={cta || ""}
                     lang={lang}
+                    meta={brief?.meta}
                     scale={0.55}
                   />
                 </div>
@@ -359,6 +360,7 @@ export default async function AdPage({
                                 body={body || ""}
                                 cta={cta || ""}
                                 lang={lang}
+                                meta={vBrief.meta}
                                 scale={0.32}
                               />
                             </div>

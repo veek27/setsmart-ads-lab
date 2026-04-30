@@ -1,3 +1,5 @@
+import type { Meta } from "@/lib/types";
+
 type Props = {
   format: string;
   accent: string;
@@ -6,6 +8,7 @@ type Props = {
   body: string;
   cta: string;
   lang: "fr" | "en";
+  meta?: Meta;
 };
 
 const NAVY = "#0a0a0a";
@@ -76,6 +79,7 @@ function SafeZone({ children }: { children: React.ReactNode }) {
         zIndex: 30,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {children}
@@ -83,8 +87,7 @@ function SafeZone({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Logo({ small = false }: { small?: boolean }) {
-  const size = small ? 24 : 30;
+function Logo() {
   return (
     <div
       style={{
@@ -98,8 +101,8 @@ function Logo({ small = false }: { small?: boolean }) {
       <img
         src="/logo-setsmart.png"
         alt=""
-        width={size}
-        height={size}
+        width={28}
+        height={28}
         style={{
           borderRadius: 7,
           objectFit: "cover",
@@ -108,7 +111,7 @@ function Logo({ small = false }: { small?: boolean }) {
       />
       <span
         style={{
-          fontSize: small ? 12 : 14,
+          fontSize: 13,
           fontWeight: 800,
           letterSpacing: -0.2,
           color: NAVY,
@@ -131,12 +134,12 @@ function Cta({ text, accent }: { text: string; accent: string }) {
     >
       <div
         style={{
-          padding: "14px 28px",
+          padding: "13px 26px",
           background: NAVY,
           color: "#fff",
           borderRadius: 999,
           fontWeight: 800,
-          fontSize: 17,
+          fontSize: 16,
           letterSpacing: -0.3,
           boxShadow: `0 8px 24px rgba(10,10,10,0.25), 0 0 0 4px ${accent}30`,
           display: "inline-flex",
@@ -218,16 +221,24 @@ function pickHighlight(hook: string): string | undefined {
   return undefined;
 }
 
-function MiddleColumn({ children }: { children: React.ReactNode }) {
+function MiddleColumn({
+  children,
+  spread = false,
+}: {
+  children: React.ReactNode;
+  spread?: boolean;
+}) {
   return (
     <div
       style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
-        gap: 18,
+        justifyContent: spread ? "space-between" : "center",
+        gap: spread ? 0 : 16,
+        padding: "16px 0",
         minHeight: 0,
+        overflow: "hidden",
       }}
     >
       {children}
@@ -267,66 +278,16 @@ function Stage(props: Props) {
 
 type StageProps = Props & { highlight?: string };
 
+function pick(lang: "fr" | "en", fr?: string, en?: string): string {
+  return (lang === "fr" ? fr : en) || "";
+}
+
 function DefaultStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
       <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={42} />
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: 19,
-            fontWeight: 600,
-            color: "#3f3f46",
-            lineHeight: 1.35,
-            padding: "0 8px",
-          }}
-        >
-          {body}
-        </div>
-      </MiddleColumn>
-      <Cta text={cta} accent={accent} />
-    </>
-  );
-}
-
-function StatStage({ hook, body, cta, accent }: StageProps) {
-  const numberMatch = hook.match(/\d+[\d:]*\s*\w*/);
-  const number = numberMatch ? numberMatch[0].trim() : hook;
-  const rest = numberMatch ? hook.replace(numberMatch[0], "").trim() : "";
-
-  return (
-    <>
-      <Logo />
-      <MiddleColumn>
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 140,
-              fontWeight: 900,
-              letterSpacing: -6,
-              lineHeight: 0.92,
-              color: NAVY,
-            }}
-          >
-            {number}
-          </div>
-          {rest && (
-            <div
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                marginTop: 14,
-                color: NAVY,
-                letterSpacing: -0.5,
-                lineHeight: 1.05,
-              }}
-            >
-              {rest}
-            </div>
-          )}
-        </div>
         <div
           style={{
             textAlign: "center",
@@ -345,10 +306,67 @@ function StatStage({ hook, body, cta, accent }: StageProps) {
   );
 }
 
-function SplitStage({ hook, body, cta, accent, highlight }: StageProps) {
-  const parts = body.split(/[.!?]/).filter((s) => s.trim());
-  const left = (parts[0] || "Setter humain").trim();
-  const right = (parts[1] || "SetSmart").trim();
+function StatStage({ hook, body, cta, accent }: StageProps) {
+  const numberMatch = hook.match(/\d+[\d:.,]*\s*[a-zA-Z%€$]*/);
+  const number = numberMatch ? numberMatch[0].trim() : hook;
+  const rest = numberMatch ? hook.replace(numberMatch[0], "").trim() : "";
+
+  return (
+    <>
+      <Logo />
+      <MiddleColumn>
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: 130,
+              fontWeight: 900,
+              letterSpacing: -6,
+              lineHeight: 0.92,
+              color: NAVY,
+            }}
+          >
+            {number}
+          </div>
+          {rest && (
+            <div
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                marginTop: 12,
+                color: NAVY,
+                letterSpacing: -0.5,
+                lineHeight: 1.05,
+              }}
+            >
+              {rest}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 17,
+            fontWeight: 600,
+            color: "#3f3f46",
+            lineHeight: 1.35,
+            padding: "0 8px",
+          }}
+        >
+          {body}
+        </div>
+      </MiddleColumn>
+      <Cta text={cta} accent={accent} />
+    </>
+  );
+}
+
+function SplitStage({ hook, cta, accent, highlight, lang, meta }: StageProps) {
+  const left =
+    pick(lang, meta?.left_fr, meta?.left_en) ||
+    (lang === "fr" ? "Setter humain" : "Human setter");
+  const right =
+    pick(lang, meta?.right_fr, meta?.right_en) || "SetSmart";
+
   return (
     <>
       <Logo />
@@ -357,7 +375,7 @@ function SplitStage({ hook, body, cta, accent, highlight }: StageProps) {
         <div style={{ display: "flex", gap: 12 }}>
           <SideCard
             label="❌"
-            title="Humain"
+            title={lang === "fr" ? "Humain" : "Human"}
             text={left}
             tone="bad"
             color="#ef4444"
@@ -400,10 +418,10 @@ function SideCard({
         boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
       }}
     >
-      <div style={{ fontSize: 24, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, marginBottom: 4 }}>{label}</div>
       <div
         style={{
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 800,
           color: tone === "good" ? color : "#ef4444",
           marginBottom: 6,
@@ -415,7 +433,7 @@ function SideCard({
       </div>
       <div
         style={{
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 600,
           color: NAVY,
           lineHeight: 1.3,
@@ -427,20 +445,41 @@ function SideCard({
   );
 }
 
-function TierStage({ hook, cta, accent, highlight }: StageProps) {
-  const tiers = [
-    { tier: "S", label: "SetSmart", color: accent },
-    { tier: "A", label: "Top agencies", color: "#10b981" },
-    { tier: "B", label: "Freelancers", color: "#fbbf24" },
-    { tier: "C", label: "Ton cousin", color: "#f97316" },
-    { tier: "F", label: "DM unread", color: "#ef4444" },
-  ];
+const DEFAULT_TIERS_FR = [
+  { tier: "S", label: "SetSmart" },
+  { tier: "A", label: "Top agences" },
+  { tier: "B", label: "Freelancers" },
+  { tier: "C", label: "Le pote dev" },
+  { tier: "F", label: "DM ignorés" },
+];
+const DEFAULT_TIERS_EN = [
+  { tier: "S", label: "SetSmart" },
+  { tier: "A", label: "Top agencies" },
+  { tier: "B", label: "Freelancers" },
+  { tier: "C", label: "Your dev friend" },
+  { tier: "F", label: "Unread DMs" },
+];
+
+function TierStage({ hook, cta, accent, highlight, lang, meta }: StageProps) {
+  const tierColors: Record<string, string> = {
+    S: accent,
+    A: "#10b981",
+    B: "#fbbf24",
+    C: "#f97316",
+    F: "#ef4444",
+  };
+  const tiers =
+    meta?.tiers?.map((t) => ({
+      tier: t.tier,
+      label: pick(lang, t.label_fr, t.label_en),
+    })) || (lang === "fr" ? DEFAULT_TIERS_FR : DEFAULT_TIERS_EN);
+
   return (
     <>
       <Logo />
       <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={26} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {tiers.map((t) => (
             <div
               key={t.tier}
@@ -455,13 +494,13 @@ function TierStage({ hook, cta, accent, highlight }: StageProps) {
             >
               <div
                 style={{
-                  width: 50,
-                  background: t.color,
+                  width: 48,
+                  background: tierColors[t.tier] || "#71717a",
                   color: "#fff",
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: 900,
                   textAlign: "center",
-                  padding: "10px 0",
+                  padding: "9px 0",
                 }}
               >
                 {t.tier}
@@ -469,8 +508,8 @@ function TierStage({ hook, cta, accent, highlight }: StageProps) {
               <div
                 style={{
                   flex: 1,
-                  padding: "10px 14px",
-                  fontSize: 15,
+                  padding: "9px 14px",
+                  fontSize: 14,
                   fontWeight: 700,
                   color: NAVY,
                 }}
@@ -486,7 +525,30 @@ function TierStage({ hook, cta, accent, highlight }: StageProps) {
   );
 }
 
-function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
+const DEFAULT_DM_FR = [
+  { side: "them" as const, text: "Hey 👋 Tu cherches quoi ?" },
+  { side: "me" as const, text: "Plus de leads qualifiés" },
+  { side: "them" as const, text: "Ton budget pub/mois ?" },
+  { side: "me" as const, text: "3-5k €" },
+  { side: "them" as const, text: "Demain 14h ça marche ?" },
+  { side: "me" as const, text: "Oui" },
+];
+const DEFAULT_DM_EN = [
+  { side: "them" as const, text: "Hey 👋 What are you after?" },
+  { side: "me" as const, text: "More qualified leads" },
+  { side: "them" as const, text: "Monthly ad budget?" },
+  { side: "me" as const, text: "$3-5k" },
+  { side: "them" as const, text: "Tomorrow 2pm work?" },
+  { side: "me" as const, text: "Yes" },
+];
+
+function DmStage({ hook, body, cta, accent, highlight, lang, meta }: StageProps) {
+  const messages =
+    meta?.messages?.map((m) => ({
+      side: m.side,
+      text: pick(lang, m.text_fr, m.text_en),
+    })) || (lang === "fr" ? DEFAULT_DM_FR : DEFAULT_DM_EN);
+
   return (
     <>
       <Logo />
@@ -507,6 +569,7 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
               marginBottom: 8,
               paddingBottom: 8,
               borderBottom: "1px solid #f4f5f7",
+              alignItems: "center",
             }}
           >
             <div
@@ -522,20 +585,12 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
               <div style={{ fontSize: 9, color: "#10b981" }}>● Active</div>
             </div>
           </div>
-          <Bubble side="them" text="Hey 👋 Tu cherches quoi ?" />
-          <Bubble side="me" text="Plus de leads qualifiés" />
-          <Bubble side="them" text="Quel budget pub/mois ?" />
-          <Bubble side="me" text="3-5k €" />
-          <Bubble side="them" text="Tu fais ça depuis combien ?" />
-          <Bubble side="me" text="2 ans" />
-          <Bubble
-            side="them"
-            text="Parfait. Demain 14h ça marche ?"
-          />
-          <Bubble side="me" text="✅ Oui" />
+          {messages.map((m, i) => (
+            <Bubble key={i} side={m.side} text={m.text} />
+          ))}
           <div
             style={{
-              marginTop: 6,
+              marginTop: 8,
               padding: "8px 10px",
               background: `${accent}15`,
               border: `1.5px solid ${accent}`,
@@ -549,13 +604,17 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
             }}
           >
             <span style={{ fontSize: 14 }}>📅</span>
-            <span>RDV pris · Demain 14:00</span>
+            <span>
+              {lang === "fr"
+                ? "RDV pris · Demain 14:00"
+                : "Booked · Tomorrow 2pm"}
+            </span>
           </div>
         </div>
         <div
           style={{
             textAlign: "center",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             color: "#3f3f46",
             lineHeight: 1.3,
@@ -572,11 +631,9 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
 function Bubble({
   side,
   text,
-  highlight,
 }: {
   side: "me" | "them";
   text: string;
-  highlight?: string;
 }) {
   const me = side === "me";
   return (
@@ -589,8 +646,8 @@ function Bubble({
     >
       <div
         style={{
-          background: highlight || (me ? NAVY : "#eef0f3"),
-          color: highlight || me ? "#fff" : NAVY,
+          background: me ? NAVY : "#eef0f3",
+          color: me ? "#fff" : NAVY,
           padding: "7px 11px",
           borderRadius: 12,
           fontSize: 11,
@@ -610,25 +667,32 @@ function BeforeAfterStage({
   cta,
   accent,
   highlight,
+  lang,
+  meta,
 }: StageProps) {
+  const before =
+    pick(lang, meta?.before_fr, meta?.before_en) ||
+    (lang === "fr"
+      ? "5 setters · €3k chacun · drama RH"
+      : "5 setters · $3k each · HR drama");
+  const after =
+    pick(lang, meta?.after_fr, meta?.after_en) ||
+    (lang === "fr"
+      ? "SetSmart · 24/7 · zero drama"
+      : "SetSmart · 24/7 · zero drama");
+
   return (
     <>
       <Logo />
       <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={36} />
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div
             style={{
               background: "#fff",
               border: "2px solid #ef444430",
               borderRadius: 14,
-              padding: "14px 18px",
+              padding: "12px 16px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
             }}
           >
@@ -641,10 +705,10 @@ function BeforeAfterStage({
                 marginBottom: 4,
               }}
             >
-              AVANT
+              {lang === "fr" ? "AVANT" : "BEFORE"}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>
-              5 setters · €3k chacun · drama RH
+            <div style={{ fontSize: 15, fontWeight: 700, color: NAVY }}>
+              {before}
             </div>
           </div>
           <div
@@ -652,7 +716,7 @@ function BeforeAfterStage({
               background: "#fff",
               border: `2px solid ${accent}50`,
               borderRadius: 14,
-              padding: "14px 18px",
+              padding: "12px 16px",
               boxShadow: `0 8px 24px ${accent}30`,
             }}
           >
@@ -665,17 +729,17 @@ function BeforeAfterStage({
                 marginBottom: 4,
               }}
             >
-              APRÈS
+              {lang === "fr" ? "APRÈS" : "AFTER"}
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>
-              SetSmart · 24/7 · zero drama
+            <div style={{ fontSize: 16, fontWeight: 800, color: NAVY }}>
+              {after}
             </div>
           </div>
         </div>
         <div
           style={{
             textAlign: "center",
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             color: "#3f3f46",
             lineHeight: 1.3,
@@ -690,14 +754,36 @@ function BeforeAfterStage({
   );
 }
 
-function ComparisonStage({ hook, cta, accent, highlight }: StageProps) {
-  const rows = [
-    { label: "Coût/mois", h: "€3-5k", a: "€199" },
-    { label: "Vitesse", h: "h/jours", a: "8 sec" },
-    { label: "Langues", h: "1-2", a: "30+" },
-    { label: "Maladie", h: "oui", a: "jamais" },
-    { label: "Scale", h: "embauche", a: "0 effort" },
-  ];
+const DEFAULT_ROWS_FR = [
+  { label: "Coût/mois", h: "€3-5k", a: "€199" },
+  { label: "Vitesse", h: "h/jours", a: "8 sec" },
+  { label: "Langues", h: "1-2", a: "30+" },
+  { label: "Off", h: "souvent", a: "jamais" },
+  { label: "Scale", h: "embauche", a: "0 effort" },
+];
+const DEFAULT_ROWS_EN = [
+  { label: "Cost/mo", h: "$3-5k", a: "$199" },
+  { label: "Speed", h: "hrs/days", a: "8 sec" },
+  { label: "Languages", h: "1-2", a: "30+" },
+  { label: "Sick days", h: "often", a: "never" },
+  { label: "Scale", h: "hire more", a: "0 effort" },
+];
+
+function ComparisonStage({
+  hook,
+  cta,
+  accent,
+  highlight,
+  lang,
+  meta,
+}: StageProps) {
+  const rows =
+    meta?.rows?.map((r) => ({
+      label: pick(lang, r.label_fr, r.label_en),
+      h: pick(lang, r.h_fr, r.h_en),
+      a: pick(lang, r.a_fr, r.a_en),
+    })) || (lang === "fr" ? DEFAULT_ROWS_FR : DEFAULT_ROWS_EN);
+
   return (
     <>
       <Logo />
@@ -716,34 +802,36 @@ function ComparisonStage({ hook, cta, accent, highlight }: StageProps) {
               display: "grid",
               gridTemplateColumns: "1.1fr 1fr 1fr",
               background: "#f4f5f7",
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: 0.5,
             }}
           >
             <div style={{ padding: "10px 12px" }}>&nbsp;</div>
-            <div style={{ padding: "10px 12px", color: "#ef4444" }}>Humain</div>
+            <div style={{ padding: "10px 12px", color: "#ef4444" }}>
+              {lang === "fr" ? "Humain" : "Human"}
+            </div>
             <div style={{ padding: "10px 12px", color: accent }}>SetSmart</div>
           </div>
           {rows.map((r, i) => (
             <div
-              key={r.label}
+              key={i}
               style={{
                 display: "grid",
                 gridTemplateColumns: "1.1fr 1fr 1fr",
                 borderTop: "1px solid #e5e7eb",
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
                 background: i === rows.length - 1 ? `${accent}10` : "transparent",
               }}
             >
-              <div style={{ padding: "10px 12px", color: "#71717a" }}>
+              <div style={{ padding: "9px 12px", color: "#71717a" }}>
                 {r.label}
               </div>
-              <div style={{ padding: "10px 12px", color: NAVY }}>{r.h}</div>
+              <div style={{ padding: "9px 12px", color: NAVY }}>{r.h}</div>
               <div
-                style={{ padding: "10px 12px", color: accent, fontWeight: 800 }}
+                style={{ padding: "9px 12px", color: accent, fontWeight: 800 }}
               >
                 {r.a}
               </div>
@@ -823,7 +911,7 @@ function QuoteStage({ hook, body, cta, accent, highlight }: StageProps) {
               color: accent,
               lineHeight: 0.9,
               fontWeight: 900,
-              marginBottom: 6,
+              marginBottom: 4,
             }}
           >
             &ldquo;
@@ -849,58 +937,97 @@ function QuoteStage({ hook, body, cta, accent, highlight }: StageProps) {
   );
 }
 
-function NarrativeStage({ hook, body, cta, accent, highlight }: StageProps) {
+const DEFAULT_STEPS_FR = [
+  { time: "9:00", text: "47 DMs en attente" },
+  { time: "9:01", text: "Setter absent" },
+  { time: "9:03", text: "SetSmart a vidé l'inbox" },
+];
+const DEFAULT_STEPS_EN = [
+  { time: "9:00", text: "47 unread DMs" },
+  { time: "9:01", text: "Setter off" },
+  { time: "9:03", text: "SetSmart cleared inbox" },
+];
+
+function NarrativeStage({
+  hook,
+  body,
+  cta,
+  accent,
+  highlight,
+  lang,
+  meta,
+}: StageProps) {
+  const steps =
+    meta?.steps?.map((s) => ({
+      time: s.time,
+      text: pick(lang, s.text_fr, s.text_en),
+    })) || (lang === "fr" ? DEFAULT_STEPS_FR : DEFAULT_STEPS_EN);
+
   return (
     <>
       <Logo />
       <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={28} />
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
-          {[
-            { time: "9:00", text: "47 DMs unread" },
-            { time: "9:01", text: "Setter sick" },
-            { time: "9:03", text: "✅ SetSmart cleared inbox" },
-          ].map((step, i) => (
-            <div
-              key={i}
-              style={{
-                background: "#fff",
-                border: i === 2 ? `2px solid ${accent}` : "1px solid #e5e7eb",
-                borderRadius: 12,
-                padding: "10px 14px",
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                boxShadow: i === 2 ? `0 8px 24px ${accent}30` : "none",
-              }}
-            >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {steps.map((step, i) => {
+            const last = i === steps.length - 1;
+            return (
               <div
+                key={i}
                 style={{
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: i === 2 ? accent : "#71717a",
-                  fontFamily: "monospace",
+                  background: "#fff",
+                  border: last ? `2px solid ${accent}` : "1px solid #e5e7eb",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  boxShadow: last ? `0 8px 24px ${accent}30` : "none",
                 }}
               >
-                {step.time}
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: last ? accent : "#71717a",
+                    fontFamily: "monospace",
+                    minWidth: 42,
+                  }}
+                >
+                  {step.time}
+                </div>
+                {last && (
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      background: accent,
+                      color: "#fff",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 900,
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: last ? 800 : 600,
+                    color: NAVY,
+                    flex: 1,
+                  }}
+                >
+                  {step.text}
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: i === 2 ? 800 : 600,
-                  color: NAVY,
-                }}
-              >
-                {step.text}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div
           style={{

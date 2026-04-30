@@ -1,5 +1,6 @@
 import { anthropic, MODEL } from "./anthropic";
 import { buildBatchPrompt } from "./prompts";
+import type { Meta } from "./types";
 
 export type Concept = {
   slug: string;
@@ -12,6 +13,7 @@ export type Concept = {
   body_en: string;
   cta_fr: string;
   cta_en: string;
+  meta?: Meta;
 };
 
 export async function generateConcepts(

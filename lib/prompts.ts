@@ -54,6 +54,19 @@ Copy rules:
 - French and English convey the SAME idea, not literal translations.
 `.trim();
 
+export const COPY_RULES = `
+Wording — what to AVOID:
+- Clinical / corporate words: "maladie", "obligation", "ressource", "human capital", "asset". Prefer human/casual: "absent", "craqué", "off", "sick day", "burned out".
+- Literal translations FR↔EN. Each language must read native. Example bad: "Maladie" → "Sickness". Example good: "Maladie" (FR) → "Sick days" (EN).
+- Filler words ("vraiment", "très", "really", "very").
+- Emojis unless they earn their place (max 1 emoji per ad, never in the hook).
+
+Wording — what to AIM for:
+- Punch over polish. Short over correct. Cheeky over corporate.
+- French = playful, slightly cheeky. English = direct, slightly more dry/witty.
+- Rare words / unexpected phrasing > flat dictionary words.
+`.trim();
+
 export const buildBatchPrompt = (
   recentLearnings: string,
   recentConcepts: string
@@ -66,6 +79,9 @@ ${PRODUCT_CONTEXT}
 # Style guide
 ${STYLE_GUIDE}
 
+# Copy rules
+${COPY_RULES}
+
 # What I learned from past batches
 ${recentLearnings || "(no feedback yet — first batch)"}
 
@@ -75,23 +91,76 @@ ${recentConcepts || "(none — this is the first batch)"}
 These have already been shown. Pick fundamentally different angles, formats, hooks, stats, narratives. If a hook line is similar to one above, REJECT it. If a format has been used in last 7 days for this same value-prop, pick another.
 
 # Your task
-Generate exactly 10 ad concepts. Each concept must be ANGLED differently — don't make 10 variations of the same idea. Mix:
+Generate exactly 10 ad concepts. Each concept must be ANGLED differently. Mix:
 - different value-prop angles (cost / speed / consistency / scale / quality / no drama)
-- different formats (split-screen comparison, single bold stat, fake-DM screenshot, before/after, tier list, fake-Apple-keynote, fake-LinkedIn post, etc.)
+- different formats (see allowed list below)
 - different emotional registers (rational / funny / aggressive / reassuring)
 
-For each concept, output a JSON object with these fields:
-- "slug": short kebab-case id, unique within the batch (e.g. "split-stress-vs-zen", "tier-list-setters")
-- "concept": one sentence describing the visual concept (what the eye sees)
+# Required fields for EVERY concept
+- "slug": short kebab-case id, unique within the batch
+- "concept": one sentence describing the visual concept
 - "format": one of: "split-screen", "single-stat", "fake-dm", "before-after", "tier-list", "fake-tweet", "comparison-table", "minimal-quote", "shock-stat", "narrative"
 - "accent_color": one of "emerald", "amber", "rose", "sky", "violet"
-- "hook_fr": the hook in French (≤ 8 words)
-- "hook_en": the hook in English (≤ 8 words)
-- "body_fr": short body copy in French (1 sentence or 2-3 micro-bullets)
-- "body_en": same in English
-- "cta_fr": French CTA (≤ 5 words)
-- "cta_en": English CTA (≤ 5 words)
+- "hook_fr": the hook in French (≤ 8 words, native French phrasing)
+- "hook_en": the hook in English (≤ 8 words, native English phrasing — NOT a translation)
+- "body_fr": short body copy in French (1 sentence ≤ 12 words OR 2-3 micro-bullets ≤ 6 words each)
+- "body_en": same in English (native, not translated)
+- "cta_fr": French CTA (≤ 5 words, imperative)
+- "cta_en": English CTA (≤ 5 words, imperative)
+
+# Format-specific "meta" field (CRITICAL)
+For formats with structured visual content, ALSO include a "meta" object with bilingual content:
+
+If format = "comparison-table":
+  "meta": {
+    "rows": [4-5 rows total]
+    Each row: { "label_fr": "...", "label_en": "...", "h_fr": "...", "h_en": "...", "a_fr": "...", "a_en": "..." }
+    label = the metric name (e.g. "Coût/mois" / "Monthly cost")
+    h = the human-setter value (e.g. "€3-5k" / "$3-5k")
+    a = the SetSmart value (e.g. "€199" / "$199")
+    Make each row PUNCHY — short values that contrast.
+  }
+
+If format = "tier-list":
+  "meta": {
+    "tiers": [exactly 5 tiers, S/A/B/C/F]
+    Each: { "tier": "S"|"A"|"B"|"C"|"F", "label_fr": "...", "label_en": "..." }
+    label = what's in that tier (e.g. "SetSmart" / "SetSmart", "Top agency" / "Top agency", "Le pote dev" / "Your dev friend")
+  }
+
+If format = "fake-dm":
+  "meta": {
+    "messages": [5-8 messages, alternating sides, ending with a confirmed booking]
+    Each: { "side": "them"|"me", "text_fr": "...", "text_en": "..." }
+    "them" = SetSmart side (the AI). "me" = the lead.
+    Conversation must show: greeting → qualifying questions → confirmation of a booked slot.
+    Each message ≤ 8 words.
+  }
+
+If format = "narrative":
+  "meta": {
+    "steps": [3-5 timeline steps]
+    Each: { "time": "9:00", "text_fr": "...", "text_en": "..." }
+    Last step = the SetSmart win moment (highlighted).
+    text ≤ 6 words each side.
+  }
+
+If format = "before-after":
+  "meta": {
+    "before_fr": "...", "before_en": "...",
+    "after_fr": "...", "after_en": "..."
+    Each ≤ 10 words. Concrete and contrasting.
+  }
+
+If format = "split-screen":
+  "meta": {
+    "left_fr": "...", "left_en": "...",
+    "right_fr": "...", "right_en": "..."
+    Left = human setter side. Right = SetSmart side. Each ≤ 8 words.
+  }
+
+For formats "single-stat", "shock-stat", "fake-tweet", "minimal-quote": NO meta needed.
 
 # Output format
-Return ONLY a JSON array of 10 objects, no prose, no markdown, no code fences. Just the raw JSON array.
+Return ONLY a JSON array of 10 objects, no prose, no markdown, no code fences.
 `.trim();

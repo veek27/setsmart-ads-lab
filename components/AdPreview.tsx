@@ -1,4 +1,5 @@
 import AdRenderer from "./AdRenderer";
+import type { Meta } from "@/lib/types";
 
 type Props = {
   format: string;
@@ -8,6 +9,7 @@ type Props = {
   body: string;
   cta: string;
   lang: "fr" | "en";
+  meta?: Meta;
   scale?: number;
 };
 

@@ -71,6 +71,7 @@ export async function POST(
         body_en: brief.body_en,
         cta_fr: brief.cta_fr,
         cta_en: brief.cta_en,
+        meta: brief.meta,
       },
       notes
     );
@@ -82,6 +83,7 @@ export async function POST(
       body_en: revised.body_en,
       cta_fr: revised.cta_fr,
       cta_en: revised.cta_en,
+      meta: revised.meta,
     });
 
     const { error: updateErr } = await sb

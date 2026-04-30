@@ -129,6 +129,7 @@ export async function runDailyBatch(): Promise<RunResult> {
       body_en: c.body_en,
       cta_fr: c.cta_fr,
       cta_en: c.cta_en,
+      meta: c.meta,
     }),
     position: i + 1,
   }));
