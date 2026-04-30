@@ -25,7 +25,9 @@ export default function AdRenderer(props: Props) {
       }}
     >
       <BackgroundLayer accent={props.accent} />
-      <Stage {...props} />
+      <SafeZone>
+        <Stage {...props} />
+      </SafeZone>
     </div>
   );
 }
@@ -61,26 +63,43 @@ function BackgroundLayer({ accent }: { accent: string }) {
   );
 }
 
-function Logo() {
+function SafeZone({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
         position: "absolute",
-        top: 224,
+        top: 210,
         left: 0,
         right: 0,
+        height: 540,
+        padding: "0 28px",
+        zIndex: 30,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Logo({ small = false }: { small?: boolean }) {
+  const size = small ? 24 : 30;
+  return (
+    <div
+      style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        zIndex: 50,
+        flexShrink: 0,
       }}
     >
       <img
         src="/logo-setsmart.png"
         alt=""
-        width={28}
-        height={28}
+        width={size}
+        height={size}
         style={{
           borderRadius: 7,
           objectFit: "cover",
@@ -89,7 +108,7 @@ function Logo() {
       />
       <span
         style={{
-          fontSize: 13,
+          fontSize: small ? 12 : 14,
           fontWeight: 800,
           letterSpacing: -0.2,
           color: NAVY,
@@ -101,23 +120,13 @@ function Logo() {
   );
 }
 
-function Cta({
-  text,
-  accent,
-}: {
-  text: string;
-  accent: string;
-}) {
+function Cta({ text, accent }: { text: string; accent: string }) {
   return (
     <div
       style={{
-        position: "absolute",
-        bottom: 230,
-        left: 0,
-        right: 0,
         display: "flex",
         justifyContent: "center",
-        zIndex: 30,
+        flexShrink: 0,
       }}
     >
       <div
@@ -127,7 +136,7 @@ function Cta({
           color: "#fff",
           borderRadius: 999,
           fontWeight: 800,
-          fontSize: 18,
+          fontSize: 17,
           letterSpacing: -0.3,
           boxShadow: `0 8px 24px rgba(10,10,10,0.25), 0 0 0 4px ${accent}30`,
           display: "inline-flex",
@@ -137,8 +146,8 @@ function Cta({
       >
         <span
           style={{
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             borderRadius: 999,
             background: accent,
           }}
@@ -160,29 +169,30 @@ function Hook({
   accent: string;
   size?: number;
 }) {
-  const parts = highlight && text.includes(highlight)
-    ? text.split(highlight).flatMap((p, i, arr) =>
-        i < arr.length - 1
-          ? [
-              p,
-              <span
-                key={i}
-                style={{
-                  display: "inline-block",
-                  background: accent,
-                  color: NAVY,
-                  padding: "0 10px",
-                  borderRadius: 8,
-                  transform: "rotate(-1.5deg)",
-                  margin: "0 2px",
-                }}
-              >
-                {highlight}
-              </span>,
-            ]
-          : [p]
-      )
-    : [text];
+  const parts =
+    highlight && text.includes(highlight)
+      ? text.split(highlight).flatMap((p, i, arr) =>
+          i < arr.length - 1
+            ? [
+                p,
+                <span
+                  key={i}
+                  style={{
+                    display: "inline-block",
+                    background: accent,
+                    color: NAVY,
+                    padding: "0 9px",
+                    borderRadius: 7,
+                    transform: "rotate(-1.5deg)",
+                    margin: "0 1px",
+                  }}
+                >
+                  {highlight}
+                </span>,
+              ]
+            : [p]
+        )
+      : [text];
 
   return (
     <div
@@ -193,7 +203,6 @@ function Hook({
         letterSpacing: -1.1,
         textAlign: "center",
         color: NAVY,
-        padding: "0 30px",
       }}
     >
       {parts}
@@ -202,39 +211,57 @@ function Hook({
 }
 
 function pickHighlight(hook: string): string | undefined {
-  const words = hook.split(/\s+/);
+  const words = hook.split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ]+$/.test(w));
   if (words.length === 0) return undefined;
   const longest = [...words].sort((a, b) => b.length - a.length)[0];
   if (longest && longest.length >= 4) return longest;
   return undefined;
 }
 
+function MiddleColumn({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 18,
+        minHeight: 0,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function Stage(props: Props) {
-  const { format, hook, body, cta, accent } = props;
+  const { format, hook } = props;
   const highlight = pickHighlight(hook);
+  const stageProps = { ...props, highlight };
 
   switch (format) {
     case "single-stat":
     case "shock-stat":
-      return <StatStage {...props} highlight={highlight} />;
+      return <StatStage {...stageProps} />;
     case "split-screen":
-      return <SplitStage {...props} highlight={highlight} />;
+      return <SplitStage {...stageProps} />;
     case "tier-list":
-      return <TierStage {...props} highlight={highlight} />;
+      return <TierStage {...stageProps} />;
     case "fake-dm":
-      return <DmStage {...props} highlight={highlight} />;
+      return <DmStage {...stageProps} />;
     case "before-after":
-      return <BeforeAfterStage {...props} highlight={highlight} />;
+      return <BeforeAfterStage {...stageProps} />;
     case "comparison-table":
-      return <ComparisonStage {...props} highlight={highlight} />;
+      return <ComparisonStage {...stageProps} />;
     case "fake-tweet":
-      return <TweetStage {...props} highlight={highlight} />;
+      return <TweetStage {...stageProps} />;
     case "minimal-quote":
-      return <QuoteStage {...props} highlight={highlight} />;
+      return <QuoteStage {...stageProps} />;
     case "narrative":
-      return <NarrativeStage {...props} highlight={highlight} />;
+      return <NarrativeStage {...stageProps} />;
     default:
-      return <DefaultStage {...props} highlight={highlight} />;
+      return <DefaultStage {...stageProps} />;
   }
 }
 
@@ -244,145 +271,106 @@ function DefaultStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
-        <Hook text={hook} highlight={highlight} accent={accent} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 470,
-          left: 60,
-          right: 60,
-          textAlign: "center",
-          fontSize: 18,
-          fontWeight: 500,
-          color: "#3f3f46",
-          lineHeight: 1.4,
-          zIndex: 30,
-        }}
-      >
-        {body}
-      </div>
+      <MiddleColumn>
+        <Hook text={hook} highlight={highlight} accent={accent} size={42} />
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 19,
+            fontWeight: 600,
+            color: "#3f3f46",
+            lineHeight: 1.35,
+            padding: "0 8px",
+          }}
+        >
+          {body}
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
 }
 
 function StatStage({ hook, body, cta, accent }: StageProps) {
-  const numberMatch = hook.match(/\d+[\d:]*\w*/);
-  const number = numberMatch ? numberMatch[0] : hook;
+  const numberMatch = hook.match(/\d+[\d:]*\s*\w*/);
+  const number = numberMatch ? numberMatch[0].trim() : hook;
   const rest = numberMatch ? hook.replace(numberMatch[0], "").trim() : "";
 
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 290,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          zIndex: 30,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 130,
-            fontWeight: 900,
-            letterSpacing: -5,
-            lineHeight: 0.95,
-            color: NAVY,
-          }}
-        >
-          {number}
-        </div>
-        {rest && (
+      <MiddleColumn>
+        <div style={{ textAlign: "center" }}>
           <div
             style={{
-              fontSize: 24,
-              fontWeight: 800,
-              marginTop: 14,
+              fontSize: 140,
+              fontWeight: 900,
+              letterSpacing: -6,
+              lineHeight: 0.92,
               color: NAVY,
-              letterSpacing: -0.5,
             }}
           >
-            {rest}
+            {number}
           </div>
-        )}
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 600,
-          left: 60,
-          right: 60,
-          textAlign: "center",
-          fontSize: 18,
-          fontWeight: 500,
-          color: "#3f3f46",
-          lineHeight: 1.4,
-          zIndex: 30,
-        }}
-      >
-        {body}
-      </div>
+          {rest && (
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 800,
+                marginTop: 14,
+                color: NAVY,
+                letterSpacing: -0.5,
+                lineHeight: 1.05,
+              }}
+            >
+              {rest}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 600,
+            color: "#3f3f46",
+            lineHeight: 1.35,
+            padding: "0 8px",
+          }}
+        >
+          {body}
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
 }
 
 function SplitStage({ hook, body, cta, accent, highlight }: StageProps) {
-  const left = body.split(/[.!?]/)[0]?.trim() || "Setter humain";
-  const right = body.split(/[.!?]/)[1]?.trim() || "SetSmart";
+  const parts = body.split(/[.!?]/).filter((s) => s.trim());
+  const left = (parts[0] || "Setter humain").trim();
+  const right = (parts[1] || "SetSmart").trim();
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
+      <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={32} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 430,
-          left: 30,
-          right: 30,
-          display: "flex",
-          gap: 14,
-          zIndex: 30,
-        }}
-      >
-        <SideCard
-          label="❌"
-          title="Humain"
-          text={left}
-          tone="bad"
-          color="#ef4444"
-        />
-        <SideCard
-          label="✅"
-          title="SetSmart"
-          text={right}
-          tone="good"
-          color={accent}
-        />
-      </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <SideCard
+            label="❌"
+            title="Humain"
+            text={left}
+            tone="bad"
+            color="#ef4444"
+          />
+          <SideCard
+            label="✅"
+            title="SetSmart"
+            text={right}
+            tone="good"
+            color={accent}
+          />
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -405,20 +393,20 @@ function SideCard({
     <div
       style={{
         flex: 1,
-        background: tone === "good" ? "#fff" : "#fff",
+        background: "#fff",
         border: `2px solid ${color}40`,
-        borderRadius: 18,
-        padding: "20px 16px",
+        borderRadius: 16,
+        padding: "16px 14px",
         boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
       }}
     >
-      <div style={{ fontSize: 26, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 24, marginBottom: 4 }}>{label}</div>
       <div
         style={{
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 800,
           color: tone === "good" ? color : "#ef4444",
-          marginBottom: 8,
+          marginBottom: 6,
           textTransform: "uppercase",
           letterSpacing: 0.5,
         }}
@@ -450,68 +438,49 @@ function TierStage({ hook, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 270,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
-        <Hook text={hook} highlight={highlight} accent={accent} size={28} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 380,
-          left: 36,
-          right: 36,
-          zIndex: 30,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-        }}
-      >
-        {tiers.map((t) => (
-          <div
-            key={t.tier}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "#fff",
-              borderRadius: 10,
-              overflow: "hidden",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            }}
-          >
+      <MiddleColumn>
+        <Hook text={hook} highlight={highlight} accent={accent} size={26} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {tiers.map((t) => (
             <div
+              key={t.tier}
               style={{
-                width: 56,
-                background: t.color,
-                color: "#fff",
-                fontSize: 28,
-                fontWeight: 900,
-                textAlign: "center",
-                padding: "12px 0",
+                display: "flex",
+                alignItems: "center",
+                background: "#fff",
+                borderRadius: 10,
+                overflow: "hidden",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
               }}
             >
-              {t.tier}
+              <div
+                style={{
+                  width: 50,
+                  background: t.color,
+                  color: "#fff",
+                  fontSize: 24,
+                  fontWeight: 900,
+                  textAlign: "center",
+                  padding: "10px 0",
+                }}
+              >
+                {t.tier}
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  padding: "10px 14px",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: NAVY,
+                }}
+              >
+                {t.label}
+              </div>
             </div>
-            <div
-              style={{
-                flex: 1,
-                padding: "12px 16px",
-                fontSize: 16,
-                fontWeight: 700,
-                color: NAVY,
-              }}
-            >
-              {t.label}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -521,69 +490,52 @@ function DmStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
-        <Hook text={hook} highlight={highlight} accent={accent} size={32} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 410,
-          left: 50,
-          right: 50,
-          background: "#fff",
-          borderRadius: 16,
-          padding: 20,
-          boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
-          zIndex: 30,
-        }}
-      >
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              background: accent,
-            }}
-          />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>SetSmart</div>
-            <div style={{ fontSize: 10, color: "#71717a" }}>Active now</div>
+      <MiddleColumn>
+        <Hook text={hook} highlight={highlight} accent={accent} size={28} />
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: 16,
+            boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                background: accent,
+              }}
+            />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>SetSmart</div>
+              <div style={{ fontSize: 9, color: "#71717a" }}>Active now</div>
+            </div>
           </div>
+          <Bubble side="them" text="Hey 👋 Tu cherches quoi ?" />
+          <Bubble side="me" text="Plus de leads qualifiés" />
+          <Bubble side="them" text="Quel budget/mois ?" />
+          <Bubble side="me" text="3-5k €" />
+          <Bubble
+            side="them"
+            text="Parfait. Slot demain 14h ?"
+            highlight={accent}
+          />
         </div>
-        <Bubble side="them" text="Hey 👋 Tu cherches quoi ?" />
-        <Bubble side="me" text="Plus de leads qualifiés" />
-        <Bubble side="them" text="Quel est ton budget ads/mois ?" />
-        <Bubble side="me" text="3-5k €" />
-        <Bubble
-          side="them"
-          text="Parfait. Je te bloque un slot demain 14h ?"
-          highlight={accent}
-        />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 700,
-          left: 60,
-          right: 60,
-          textAlign: "center",
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#3f3f46",
-          zIndex: 30,
-        }}
-      >
-        {body}
-      </div>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#3f3f46",
+            lineHeight: 1.3,
+          }}
+        >
+          {body}
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -604,16 +556,16 @@ function Bubble({
       style={{
         display: "flex",
         justifyContent: me ? "flex-end" : "flex-start",
-        marginBottom: 6,
+        marginBottom: 4,
       }}
     >
       <div
         style={{
           background: highlight || (me ? NAVY : "#eef0f3"),
           color: highlight || me ? "#fff" : NAVY,
-          padding: "8px 12px",
-          borderRadius: 14,
-          fontSize: 12,
+          padding: "7px 11px",
+          borderRadius: 12,
+          fontSize: 11,
           fontWeight: 600,
           maxWidth: "75%",
         }}
@@ -624,79 +576,72 @@ function Bubble({
   );
 }
 
-function BeforeAfterStage({ hook, body, cta, accent, highlight }: StageProps) {
+function BeforeAfterStage({
+  hook,
+  body,
+  cta,
+  accent,
+  highlight,
+}: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
+      <MiddleColumn>
         <Hook text={hook} highlight={highlight} accent={accent} size={36} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 430,
-          left: 36,
-          right: 36,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          zIndex: 30,
-        }}
-      >
         <div
           style={{
-            background: "#fff",
-            border: "2px solid #ef444430",
-            borderRadius: 14,
-            padding: "14px 18px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
           }}
         >
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: "#ef4444",
-              letterSpacing: 0.5,
-              marginBottom: 4,
+              background: "#fff",
+              border: "2px solid #ef444430",
+              borderRadius: 14,
+              padding: "14px 18px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
             }}
           >
-            AVANT
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "#ef4444",
+                letterSpacing: 0.5,
+                marginBottom: 4,
+              }}
+            >
+              AVANT
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>
+              5 setters · €3k chacun · drama RH
+            </div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>
-            5 setters · €3k chacun · drama RH
-          </div>
-        </div>
-        <div
-          style={{
-            background: "#fff",
-            border: `2px solid ${accent}50`,
-            borderRadius: 14,
-            padding: "14px 18px",
-            boxShadow: `0 8px 24px ${accent}30`,
-          }}
-        >
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: accent,
-              letterSpacing: 0.5,
-              marginBottom: 4,
+              background: "#fff",
+              border: `2px solid ${accent}50`,
+              borderRadius: 14,
+              padding: "14px 18px",
+              boxShadow: `0 8px 24px ${accent}30`,
             }}
           >
-            APRÈS
-          </div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>
-            SetSmart · 24/7 · zero drama
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: accent,
+                letterSpacing: 0.5,
+                marginBottom: 4,
+              }}
+            >
+              APRÈS
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>
+              SetSmart · 24/7 · zero drama
+            </div>
           </div>
         </div>
         <div
@@ -705,13 +650,13 @@ function BeforeAfterStage({ hook, body, cta, accent, highlight }: StageProps) {
             fontSize: 14,
             fontWeight: 600,
             color: "#3f3f46",
-            marginTop: 6,
             lineHeight: 1.3,
+            padding: "0 8px",
           }}
         >
           {body}
         </div>
-      </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -728,67 +673,56 @@ function ComparisonStage({ hook, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 270,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
-        <Hook text={hook} highlight={highlight} accent={accent} size={30} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 380,
-          left: 36,
-          right: 36,
-          background: "#fff",
-          borderRadius: 14,
-          overflow: "hidden",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-          zIndex: 30,
-        }}
-      >
+      <MiddleColumn>
+        <Hook text={hook} highlight={highlight} accent={accent} size={28} />
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            background: "#f4f5f7",
-            fontSize: 11,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            background: "#fff",
+            borderRadius: 14,
+            overflow: "hidden",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
           }}
         >
-          <div style={{ padding: "10px 12px" }}>&nbsp;</div>
-          <div style={{ padding: "10px 12px", color: "#ef4444" }}>Humain</div>
-          <div style={{ padding: "10px 12px", color: accent }}>SetSmart</div>
-        </div>
-        {rows.map((r, i) => (
           <div
-            key={r.label}
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              borderTop: "1px solid #e5e7eb",
-              fontSize: 13,
-              fontWeight: 600,
-              background: i === rows.length - 1 ? `${accent}10` : "transparent",
+              gridTemplateColumns: "1.1fr 1fr 1fr",
+              background: "#f4f5f7",
+              fontSize: 11,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
             }}
           >
-            <div style={{ padding: "12px", color: "#71717a" }}>{r.label}</div>
-            <div style={{ padding: "12px", color: NAVY }}>{r.h}</div>
-            <div
-              style={{ padding: "12px", color: accent, fontWeight: 800 }}
-            >
-              {r.a}
-            </div>
+            <div style={{ padding: "10px 12px" }}>&nbsp;</div>
+            <div style={{ padding: "10px 12px", color: "#ef4444" }}>Humain</div>
+            <div style={{ padding: "10px 12px", color: accent }}>SetSmart</div>
           </div>
-        ))}
-      </div>
+          {rows.map((r, i) => (
+            <div
+              key={r.label}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.1fr 1fr 1fr",
+                borderTop: "1px solid #e5e7eb",
+                fontSize: 13,
+                fontWeight: 600,
+                background: i === rows.length - 1 ? `${accent}10` : "transparent",
+              }}
+            >
+              <div style={{ padding: "10px 12px", color: "#71717a" }}>
+                {r.label}
+              </div>
+              <div style={{ padding: "10px 12px", color: NAVY }}>{r.h}</div>
+              <div
+                style={{ padding: "10px 12px", color: accent, fontWeight: 800 }}
+              >
+                {r.a}
+              </div>
+            </div>
+          ))}
+        </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -798,48 +732,52 @@ function TweetStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 290,
-          left: 36,
-          right: 36,
-          background: "#fff",
-          borderRadius: 16,
-          padding: 22,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-          zIndex: 30,
-        }}
-      >
+      <MiddleColumn>
         <div
-          style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: 18,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+          }}
         >
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 999,
-              background: "#e5e7eb",
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              marginBottom: 12,
             }}
-          />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800 }}>Founder Anonyme</div>
-            <div style={{ fontSize: 11, color: "#71717a" }}>· 2h</div>
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 999,
+                background: "#e5e7eb",
+              }}
+            />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>
+                Founder Anonyme
+              </div>
+              <div style={{ fontSize: 10, color: "#71717a" }}>· 2h</div>
+            </div>
+          </div>
+          <Hook text={hook} highlight={highlight} accent={accent} size={22} />
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              fontWeight: 500,
+              color: "#3f3f46",
+              lineHeight: 1.4,
+            }}
+          >
+            {body}
           </div>
         </div>
-        <Hook text={hook} highlight={highlight} accent={accent} size={22} />
-        <div
-          style={{
-            marginTop: 14,
-            fontSize: 13,
-            fontWeight: 500,
-            color: "#3f3f46",
-            lineHeight: 1.4,
-          }}
-        >
-          {body}
-        </div>
-      </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -849,42 +787,35 @@ function QuoteStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 340,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-          textAlign: "center",
-          padding: "0 40px",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 60,
-            color: accent,
-            lineHeight: 1,
-            fontWeight: 900,
-            marginBottom: 10,
-          }}
-        >
-          &ldquo;
+      <MiddleColumn>
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: 56,
+              color: accent,
+              lineHeight: 0.9,
+              fontWeight: 900,
+              marginBottom: 6,
+            }}
+          >
+            &ldquo;
+          </div>
+          <Hook text={hook} highlight={highlight} accent={accent} size={36} />
         </div>
-        <Hook text={hook} highlight={highlight} accent={accent} size={36} />
         <div
           style={{
-            marginTop: 24,
             fontSize: 16,
             fontWeight: 500,
             color: "#3f3f46",
             fontStyle: "italic",
             lineHeight: 1.4,
+            textAlign: "center",
+            padding: "0 8px",
           }}
         >
           {body}
         </div>
-      </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
@@ -894,81 +825,67 @@ function NarrativeStage({ hook, body, cta, accent, highlight }: StageProps) {
   return (
     <>
       <Logo />
-      <div
-        style={{
-          position: "absolute",
-          top: 280,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-        }}
-      >
-        <Hook text={hook} highlight={highlight} accent={accent} size={32} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 430,
-          left: 40,
-          right: 40,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          zIndex: 30,
-        }}
-      >
-        {[
-          { time: "9:00", text: "47 DMs unread" },
-          { time: "9:01", text: "Setter sick" },
-          { time: "9:03", text: "✅ SetSmart cleared inbox" },
-        ].map((step, i) => (
-          <div
-            key={i}
-            style={{
-              background: "#fff",
-              border: i === 2 ? `2px solid ${accent}` : "1px solid #e5e7eb",
-              borderRadius: 12,
-              padding: "12px 14px",
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              boxShadow: i === 2 ? `0 8px 24px ${accent}30` : "none",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 800,
-                color: i === 2 ? accent : "#71717a",
-                fontFamily: "monospace",
-              }}
-            >
-              {step.time}
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: i === 2 ? 800 : 600,
-                color: NAVY,
-              }}
-            >
-              {step.text}
-            </div>
-          </div>
-        ))}
+      <MiddleColumn>
+        <Hook text={hook} highlight={highlight} accent={accent} size={28} />
         <div
           style={{
-            marginTop: 8,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          {[
+            { time: "9:00", text: "47 DMs unread" },
+            { time: "9:01", text: "Setter sick" },
+            { time: "9:03", text: "✅ SetSmart cleared inbox" },
+          ].map((step, i) => (
+            <div
+              key={i}
+              style={{
+                background: "#fff",
+                border: i === 2 ? `2px solid ${accent}` : "1px solid #e5e7eb",
+                borderRadius: 12,
+                padding: "10px 14px",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                boxShadow: i === 2 ? `0 8px 24px ${accent}30` : "none",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: i === 2 ? accent : "#71717a",
+                  fontFamily: "monospace",
+                }}
+              >
+                {step.time}
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: i === 2 ? 800 : 600,
+                  color: NAVY,
+                }}
+              >
+                {step.text}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
             textAlign: "center",
             fontSize: 13,
             fontWeight: 600,
             color: "#3f3f46",
-            lineHeight: 1.4,
+            lineHeight: 1.3,
           }}
         >
           {body}
         </div>
-      </div>
+      </MiddleColumn>
       <Cta text={cta} accent={accent} />
     </>
   );
