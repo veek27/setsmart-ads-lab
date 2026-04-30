@@ -3,6 +3,7 @@ import { parseBrief, ACCENT_COLORS, type Ad, type Batch } from "@/lib/types";
 import Link from "next/link";
 import Image from "next/image";
 import AdPreview from "@/components/AdPreview";
+import PublishButton from "./PublishButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -196,6 +197,15 @@ export default async function Home() {
             </div>
           </div>
         </header>
+
+        {/* Publish */}
+        <section className="mb-10">
+          <PublishButton
+            validatedCount={
+              ads.filter((a) => a.status === "validated").length
+            }
+          />
+        </section>
 
         {/* Concepts grid */}
         <section>
