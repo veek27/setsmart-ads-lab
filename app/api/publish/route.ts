@@ -5,7 +5,6 @@ import {
   createBatchFolder,
   createSubfolder,
   uploadPng,
-  makeFolderShareable,
 } from "@/lib/drive";
 import type { Ad, Batch } from "@/lib/types";
 
@@ -81,7 +80,6 @@ export async function POST(request: Request) {
     }
 
     const batchFolder = await createBatchFolder(parentFolderId, batch.date);
-    await makeFolderShareable(batchFolder.folderId);
 
     const [frFolder, enFolder] = await Promise.all([
       createSubfolder(batchFolder.folderId, "FR"),
