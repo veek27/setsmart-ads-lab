@@ -88,7 +88,13 @@ ${recentLearnings || "(no feedback yet — first batch)"}
 # Concepts already produced in the last 14 days — DO NOT REPEAT
 ${recentConcepts || "(none — this is the first batch)"}
 
-These have already been shown. Pick fundamentally different angles, formats, hooks, stats, narratives. If a hook line is similar to one above, REJECT it. If a format has been used in last 7 days for this same value-prop, pick another.
+# Anti-repetition rules (HARD CONSTRAINTS)
+1. **Hooks**: NO hook can be similar in meaning, structure, or keyword to ANY hook above. If yesterday had "Le classement des setters", you CAN'T do "Le classement des temps de réponse" — too close. Pick a totally different angle.
+2. **Formats**: Look at YESTERDAY's batch (the most recent date in the list above). Use AT MOST 4 of yesterday's formats. The other 6+ MUST be different formats from the allowed list. This forces visual variety day-to-day.
+3. **Value-prop angles**: each of the 10 concepts must hit a DIFFERENT angle (cost / speed / consistency / scale / quality / no-drama / 24-7 / multi-lang / qualification / no-hiring). Don't do 2 ads about cost.
+4. **Specific entities**: don't reuse the same fake names (e.g. "Marc"), same hours (e.g. "3h47", "9h00"), same stats (e.g. "8 sec", "47 DMs"). Vary all numerical and named details.
+
+If you catch yourself drafting something close to a past entry, REJECT and re-draft from a fundamentally different angle.
 
 # Your task
 Generate exactly 10 ad concepts. Each concept must be ANGLED differently. Mix:
