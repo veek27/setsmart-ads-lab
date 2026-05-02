@@ -61,10 +61,10 @@ async function getRecentConcepts(days = 14): Promise<string> {
     .join("\n");
 }
 
-export async function runDailyBatch(): Promise<RunResult> {
+export async function runDailyBatch(forDate?: string): Promise<RunResult> {
   const started = Date.now();
   const sb = supabaseAdmin();
-  const date = todayParis();
+  const date = forDate || todayParis();
 
   const { data: existing } = await sb
     .from("batches")

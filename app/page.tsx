@@ -6,6 +6,7 @@ import AdPreview from "@/components/AdPreview";
 import PublishButton from "./PublishButton";
 import DateNav from "./DateNav";
 import GenerateNowButton from "./GenerateNowButton";
+import RegenerateButton from "./RegenerateButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -121,12 +122,13 @@ export default async function Home({
             </div>
           </div>
 
-          {/* Date nav */}
-          <div className="mb-6">
+          {/* Date nav + regen */}
+          <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
             <DateNav
               currentDate={requested}
               availableDates={availableDates}
             />
+            {batch && <RegenerateButton date={requested} />}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
