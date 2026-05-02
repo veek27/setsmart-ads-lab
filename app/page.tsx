@@ -6,9 +6,6 @@ import AdPreview from "@/components/AdPreview";
 import PublishButton from "./PublishButton";
 import DateNav from "./DateNav";
 import GenerateNowButton from "./GenerateNowButton";
-import ConnectGoogle from "./ConnectGoogle";
-import { isGoogleConnected } from "@/lib/drive";
-import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -80,8 +77,8 @@ export default async function Home({
   const today = todayParis();
   const requested = sp.date && isValidDate(sp.date) ? sp.date : today;
 
-  const [{ batch, ads, totalBatches, availableDates }, googleConnected] =
-    await Promise.all([getBatchForDate(requested), isGoogleConnected()]);
+  const { batch, ads, totalBatches, availableDates } =
+    await getBatchForDate(requested);
 
   const friendlyDate = new Date(requested + "T12:00:00").toLocaleDateString(
     "fr-FR",
@@ -207,10 +204,7 @@ export default async function Home({
           </div>
         ) : (
           <>
-            <section className="mb-10 space-y-3">
-              <Suspense fallback={null}>
-                <ConnectGoogle connected={googleConnected} />
-              </Suspense>
+            <section className="mb-10">
               <PublishButton
                 validatedCount={
                   ads.filter((a) => a.status === "validated").length

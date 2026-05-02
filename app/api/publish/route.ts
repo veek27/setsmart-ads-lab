@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
+import JSZip from "jszip";
 import { supabaseAdmin } from "@/lib/supabase";
 import { screenshotAd } from "@/lib/screenshot";
-import {
-  createBatchFolder,
-  createSubfolder,
-  uploadPng,
-} from "@/lib/drive";
 import type { Ad, Batch } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -57,39 +53,20 @@ export async function POST(request: Request) {
 
     if (!validatedAds || validatedAds.length === 0) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Aucune ad validée dans ce batch",
-        },
+        { ok: false, error: "Aucune ad validée dans ce batch" },
         { status: 400 }
       );
     }
 
     const ads = validatedAds as Ad[];
 
-    const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
-    if (!parentFolderId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Drive non configuré. Définis GOOGLE_DRIVE_PARENT_FOLDER_ID + service account.",
-        },
-        { status: 500 }
-      );
-    }
+    const reqUrl = new URL(request.url);
+    const baseUrl = `${reqUrl.protocol}//${reqUrl.host}`;
 
-    const batchFolder = await createBatchFolder(parentFolderId, batch.date);
+    const frZip = new JSZip();
+    const enZip = new JSZip();
 
-    const [frFolder, enFolder] = await Promise.all([
-      createSubfolder(batchFolder.folderId, "FR"),
-      createSubfolder(batchFolder.folderId, "EN"),
-    ]);
-
-    const url = new URL(request.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-
-    let uploaded = 0;
+    let processed = 0;
     for (const ad of ads) {
       for (const lang of ["fr", "en"] as const) {
         const renderUrl = `${baseUrl}/render/${ad.id}/${lang}`;
@@ -97,22 +74,62 @@ export async function POST(request: Request) {
         const filename = `${ad.position
           ?.toString()
           .padStart(2, "0")}-${ad.slug}.png`;
-        const targetFolder = lang === "fr" ? frFolder.folderId : enFolder.folderId;
-        await uploadPng(targetFolder, filename, png);
-        uploaded++;
+        if (lang === "fr") {
+          frZip.file(filename, png);
+        } else {
+          enZip.file(filename, png);
+        }
+        processed++;
       }
     }
+
+    const frBuffer = await frZip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 },
+    });
+    const enBuffer = await enZip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 },
+    });
+
+    const ts = Date.now();
+    const frPath = `batches/${batch.date}/${ts}-fr.zip`;
+    const enPath = `batches/${batch.date}/${ts}-en.zip`;
+
+    const { error: frUpErr } = await sb.storage
+      .from("ads-lab-images")
+      .upload(frPath, frBuffer, {
+        contentType: "application/zip",
+        upsert: true,
+      });
+    if (frUpErr) throw new Error(`Upload FR ZIP failed: ${frUpErr.message}`);
+
+    const { error: enUpErr } = await sb.storage
+      .from("ads-lab-images")
+      .upload(enPath, enBuffer, {
+        contentType: "application/zip",
+        upsert: true,
+      });
+    if (enUpErr) throw new Error(`Upload EN ZIP failed: ${enUpErr.message}`);
+
+    const { data: frUrl } = sb.storage
+      .from("ads-lab-images")
+      .getPublicUrl(frPath);
+    const { data: enUrl } = sb.storage
+      .from("ads-lab-images")
+      .getPublicUrl(enPath);
 
     return NextResponse.json({
       ok: true,
       batchId: batch.id,
       batchDate: batch.date,
       adsCount: ads.length,
-      filesUploaded: uploaded,
+      filesGenerated: processed,
       links: {
-        batch: batchFolder.folderUrl,
-        fr: frFolder.folderUrl,
-        en: enFolder.folderUrl,
+        fr: frUrl.publicUrl,
+        en: enUrl.publicUrl,
       },
     });
   } catch (e) {
