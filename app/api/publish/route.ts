@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
+import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 import { screenshotAd } from "@/lib/screenshot";
 import type { Ad, Batch } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
+
+type ShareFile = {
+  filename: string;
+  url: string;
+  lang: "fr" | "en";
+  slug: string;
+  position: number;
+};
 
 export async function POST(request: Request) {
   try {
@@ -63,56 +72,74 @@ export async function POST(request: Request) {
     const reqUrl = new URL(request.url);
     const baseUrl = `${reqUrl.protocol}//${reqUrl.host}`;
 
+    const ts = Date.now();
     const frZip = new JSZip();
     const enZip = new JSZip();
+    const files: ShareFile[] = [];
 
-    let processed = 0;
     for (const ad of ads) {
       for (const lang of ["fr", "en"] as const) {
         const renderUrl = `${baseUrl}/render/${ad.id}/${lang}`;
         const png = await screenshotAd(renderUrl);
         const filename = `${ad.position
           ?.toString()
-          .padStart(2, "0")}-${ad.slug}.png`;
-        if (lang === "fr") {
-          frZip.file(filename, png);
-        } else {
-          enZip.file(filename, png);
-        }
-        processed++;
+          .padStart(2, "0")}-${ad.slug}-${lang}.png`;
+
+        const path = `batches/${batch.date}/${ts}/${lang}/${filename}`;
+        const { error: upErr } = await sb.storage
+          .from("ads-lab-images")
+          .upload(path, png, { contentType: "image/png", upsert: true });
+        if (upErr) throw new Error(`Upload PNG failed: ${upErr.message}`);
+
+        const { data: urlData } = sb.storage
+          .from("ads-lab-images")
+          .getPublicUrl(path);
+
+        files.push({
+          filename,
+          url: urlData.publicUrl,
+          lang,
+          slug: ad.slug,
+          position: ad.position || 0,
+        });
+
+        if (lang === "fr") frZip.file(filename, png);
+        else enZip.file(filename, png);
       }
     }
 
-    const frBuffer = await frZip.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 },
-    });
-    const enBuffer = await enZip.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 },
-    });
+    const [frBuffer, enBuffer] = await Promise.all([
+      frZip.generateAsync({
+        type: "nodebuffer",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      }),
+      enZip.generateAsync({
+        type: "nodebuffer",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      }),
+    ]);
 
-    const ts = Date.now();
-    const frPath = `batches/${batch.date}/${ts}-fr.zip`;
-    const enPath = `batches/${batch.date}/${ts}-en.zip`;
+    const frPath = `batches/${batch.date}/${ts}/fr.zip`;
+    const enPath = `batches/${batch.date}/${ts}/en.zip`;
 
-    const { error: frUpErr } = await sb.storage
-      .from("ads-lab-images")
-      .upload(frPath, frBuffer, {
-        contentType: "application/zip",
-        upsert: true,
-      });
-    if (frUpErr) throw new Error(`Upload FR ZIP failed: ${frUpErr.message}`);
-
-    const { error: enUpErr } = await sb.storage
-      .from("ads-lab-images")
-      .upload(enPath, enBuffer, {
-        contentType: "application/zip",
-        upsert: true,
-      });
-    if (enUpErr) throw new Error(`Upload EN ZIP failed: ${enUpErr.message}`);
+    const [frUp, enUp] = await Promise.all([
+      sb.storage
+        .from("ads-lab-images")
+        .upload(frPath, frBuffer, {
+          contentType: "application/zip",
+          upsert: true,
+        }),
+      sb.storage
+        .from("ads-lab-images")
+        .upload(enPath, enBuffer, {
+          contentType: "application/zip",
+          upsert: true,
+        }),
+    ]);
+    if (frUp.error) throw new Error(`Upload FR ZIP: ${frUp.error.message}`);
+    if (enUp.error) throw new Error(`Upload EN ZIP: ${enUp.error.message}`);
 
     const { data: frUrl } = sb.storage
       .from("ads-lab-images")
@@ -121,13 +148,24 @@ export async function POST(request: Request) {
       .from("ads-lab-images")
       .getPublicUrl(enPath);
 
+    const token = crypto.randomBytes(12).toString("base64url");
+    const { error: shareErr } = await sb.from("shares").insert({
+      token,
+      batch_id: batch.id,
+      files,
+    });
+    if (shareErr) throw new Error(`Share creation: ${shareErr.message}`);
+
+    const shareUrl = `${baseUrl}/share/${token}`;
+
     return NextResponse.json({
       ok: true,
       batchId: batch.id,
       batchDate: batch.date,
       adsCount: ads.length,
-      filesGenerated: processed,
+      filesGenerated: files.length,
       links: {
+        share: shareUrl,
         fr: frUrl.publicUrl,
         en: enUrl.publicUrl,
       },

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 type Result = {
   ok: boolean;
-  links?: { fr: string; en: string };
+  links?: { share: string; fr: string; en: string };
   filesGenerated?: number;
   adsCount?: number;
   batchDate?: string;
@@ -20,6 +20,7 @@ export default function PublishButton({
 }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function publish() {
     if (validatedCount === 0) return;
@@ -52,6 +53,12 @@ export default function PublishButton({
     document.body.removeChild(a);
   }
 
+  async function copyShareLink(url: string) {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   if (validatedCount === 0) {
     return (
       <button
@@ -65,44 +72,79 @@ export default function PublishButton({
 
   if (result?.ok && result.links) {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-4">
+      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-5">
         <div className="flex items-center gap-2">
           <span className="text-xl">🎉</span>
           <div>
             <div className="text-sm font-bold text-emerald-300">
-              {result.filesGenerated} PNG générés ({result.adsCount} ads)
+              {result.filesGenerated} PNG générés
             </div>
             <div className="text-xs text-zinc-500">
-              Tes 2 archives sont prêtes
+              ({result.adsCount} ads × FR + EN)
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => downloadZip(result.links!.fr, "fr", result.batchDate)}
-            className="rounded-xl border border-amber-400/40 bg-amber-400/5 hover:bg-amber-400/15 hover:border-amber-300 px-4 py-4 text-center transition-colors group"
-          >
-            <div className="text-2xl mb-1">🇫🇷</div>
-            <div className="text-sm font-bold text-amber-300">
-              Pack FR
-            </div>
-            <div className="text-[10px] text-zinc-500 mt-1 group-hover:text-amber-200">
-              Télécharger .zip
-            </div>
-          </button>
-          <button
-            onClick={() => downloadZip(result.links!.en, "en", result.batchDate)}
-            className="rounded-xl border border-sky-400/40 bg-sky-400/5 hover:bg-sky-400/15 hover:border-sky-300 px-4 py-4 text-center transition-colors group"
-          >
-            <div className="text-2xl mb-1">🇬🇧</div>
-            <div className="text-sm font-bold text-sky-300">
-              Pack EN
-            </div>
-            <div className="text-[10px] text-zinc-500 mt-1 group-hover:text-sky-200">
-              Télécharger .zip
-            </div>
-          </button>
+
+        {/* Share link — main feature */}
+        <div className="rounded-xl border border-amber-400/40 bg-gradient-to-br from-amber-400/10 to-amber-400/5 p-4">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 font-bold mb-2">
+            🔗 Lien à envoyer à ton media buyer
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={result.links.share}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              className="flex-1 bg-black/40 border border-amber-400/30 rounded-lg px-3 py-2 text-xs text-zinc-200 font-mono"
+            />
+            <button
+              onClick={() => copyShareLink(result.links!.share)}
+              className="rounded-lg bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs font-bold text-black transition-colors whitespace-nowrap"
+            >
+              {copied ? "✓ Copié" : "📋 Copier"}
+            </button>
+            <a
+              href={result.links.share}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-amber-400/40 hover:bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-300 transition-colors whitespace-nowrap"
+            >
+              ↗ Ouvrir
+            </a>
+          </div>
+          <div className="text-[10px] text-zinc-500 mt-2">
+            Page publique : il pourra sélectionner les visuels qu&apos;il veut
+            et télécharger en lot ou un par un.
+          </div>
         </div>
+
+        {/* Direct ZIP downloads — fallback */}
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold mb-2">
+            Ou télécharge tout direct toi
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => downloadZip(result.links!.fr, "fr", result.batchDate)}
+              className="rounded-xl border border-zinc-700 bg-black/30 hover:border-amber-400/40 hover:bg-amber-400/5 px-4 py-3 text-center transition-colors group"
+            >
+              <div className="text-[10px] text-zinc-500 group-hover:text-amber-300 font-bold">
+                🇫🇷 Pack FR
+              </div>
+              <div className="text-[10px] text-zinc-600 mt-0.5">.zip</div>
+            </button>
+            <button
+              onClick={() => downloadZip(result.links!.en, "en", result.batchDate)}
+              className="rounded-xl border border-zinc-700 bg-black/30 hover:border-sky-400/40 hover:bg-sky-400/5 px-4 py-3 text-center transition-colors group"
+            >
+              <div className="text-[10px] text-zinc-500 group-hover:text-sky-300 font-bold">
+                🇬🇧 Pack EN
+              </div>
+              <div className="text-[10px] text-zinc-600 mt-0.5">.zip</div>
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={() => setResult(null)}
           className="text-xs text-zinc-500 hover:text-zinc-300 underline"
@@ -123,12 +165,12 @@ export default function PublishButton({
         {busy ? (
           <span className="inline-flex items-center gap-2">
             <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-            Génération PNG en cours… ({validatedCount}×2 fichiers, ~{validatedCount * 4}s)
+            Génération PNG en cours… (~{validatedCount * 4}s)
           </span>
         ) : (
           <>
             🚀 Publier {validatedCount} ad{validatedCount > 1 ? "s" : ""}{" "}
-            validée{validatedCount > 1 ? "s" : ""} → 2 ZIPs (FR + EN)
+            validée{validatedCount > 1 ? "s" : ""}
           </>
         )}
       </button>
