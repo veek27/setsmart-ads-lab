@@ -206,6 +206,7 @@ export default async function Home({
           <>
             <section className="mb-10">
               <PublishButton
+                batchId={batch.id}
                 validatedCount={
                   ads.filter((a) => a.status === "validated").length
                 }

@@ -13,8 +13,10 @@ type Result = {
 
 export default function PublishButton({
   validatedCount,
+  batchId,
 }: {
   validatedCount: number;
+  batchId: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -27,7 +29,7 @@ export default function PublishButton({
       const res = await fetch("/api/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify({ batchId }),
       });
       const data = await res.json();
       setResult(data);
