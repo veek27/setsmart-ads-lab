@@ -61,96 +61,100 @@ export default function PublishButton({
 
   if (validatedCount === 0) {
     return (
-      <button
-        disabled
-        className="rounded-2xl border border-zinc-800 bg-zinc-900/40 px-6 py-4 text-sm font-bold text-zinc-600 cursor-not-allowed w-full"
-      >
-        Aucune ad validée à publier
-      </button>
+      <div className="rounded-xl border border-zinc-900 bg-zinc-950/60 px-5 py-3 text-xs text-zinc-600 inline-flex items-center gap-2">
+        <span className="w-1 h-1 rounded-full bg-zinc-700" />
+        Aucune ad validée
+      </div>
     );
   }
 
   if (result?.ok && result.links) {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-5">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🎉</span>
+      <div className="rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-950 to-black overflow-hidden">
+        {/* Top thin amber bar */}
+        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+
+        <div className="p-5 space-y-5">
+          {/* Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center">
+                <span className="text-emerald-400 text-sm font-black">✓</span>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-zinc-100">
+                  Pack publié
+                </div>
+                <div className="text-[11px] text-zinc-500">
+                  {result.filesGenerated} créatives ·{" "}
+                  {result.adsCount} ads × FR + EN
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setResult(null)}
+              className="text-[11px] text-zinc-500 hover:text-zinc-300 underline-offset-2 hover:underline transition-colors"
+            >
+              Re-publier
+            </button>
+          </div>
+
+          {/* Share link — hero */}
           <div>
-            <div className="text-sm font-bold text-emerald-300">
-              {result.filesGenerated} PNG générés
+            <div className="text-[10px] uppercase tracking-[0.18em] text-amber-400/80 font-bold mb-2.5">
+              Lien à partager
             </div>
-            <div className="text-xs text-zinc-500">
-              ({result.adsCount} ads × FR + EN)
+            <div className="flex items-center gap-1.5 rounded-xl bg-black border border-zinc-800 p-1.5 shadow-inner">
+              <input
+                readOnly
+                value={result.links.share}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-zinc-300 font-mono focus:outline-none truncate"
+              />
+              <button
+                onClick={() => copyShareLink(result.links!.share)}
+                className="rounded-lg bg-amber-400 hover:bg-amber-300 px-3 py-1.5 text-[11px] font-bold text-black transition-all whitespace-nowrap"
+              >
+                {copied ? "✓ Copié" : "Copier"}
+              </button>
+              <a
+                href={result.links.share}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 text-[11px] font-bold text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+              >
+                Ouvrir ↗
+              </a>
+            </div>
+            <div className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
+              Le destinataire pourra browser les visuels, sélectionner ce
+              qu&apos;il veut et télécharger en lot.
             </div>
           </div>
-        </div>
 
-        {/* Share link — main feature */}
-        <div className="rounded-xl border border-amber-400/40 bg-gradient-to-br from-amber-400/10 to-amber-400/5 p-4">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-amber-300 font-bold mb-2">
-            🔗 Lien à envoyer à ton media buyer
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={result.links.share}
-              onClick={(e) => (e.target as HTMLInputElement).select()}
-              className="flex-1 bg-black/40 border border-amber-400/30 rounded-lg px-3 py-2 text-xs text-zinc-200 font-mono"
-            />
+          {/* Direct download chips */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-600 font-bold mr-1">
+              ou direct
+            </span>
             <button
-              onClick={() => copyShareLink(result.links!.share)}
-              className="rounded-lg bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs font-bold text-black transition-colors whitespace-nowrap"
+              onClick={() =>
+                downloadZip(result.links!.fr, "fr", result.batchDate)
+              }
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 hover:text-amber-300 hover:bg-amber-400/5 border border-zinc-800 hover:border-amber-400/30 rounded-lg px-2.5 py-1.5 transition-all"
             >
-              {copied ? "✓ Copié" : "📋 Copier"}
-            </button>
-            <a
-              href={result.links.share}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-amber-400/40 hover:bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-300 transition-colors whitespace-nowrap"
-            >
-              ↗ Ouvrir
-            </a>
-          </div>
-          <div className="text-[10px] text-zinc-500 mt-2">
-            Page publique : il pourra sélectionner les visuels qu&apos;il veut
-            et télécharger en lot ou un par un.
-          </div>
-        </div>
-
-        {/* Direct ZIP downloads — fallback */}
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold mb-2">
-            Ou télécharge tout direct toi
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => downloadZip(result.links!.fr, "fr", result.batchDate)}
-              className="rounded-xl border border-zinc-700 bg-black/30 hover:border-amber-400/40 hover:bg-amber-400/5 px-4 py-3 text-center transition-colors group"
-            >
-              <div className="text-[10px] text-zinc-500 group-hover:text-amber-300 font-bold">
-                🇫🇷 Pack FR
-              </div>
-              <div className="text-[10px] text-zinc-600 mt-0.5">.zip</div>
+              🇫🇷 FR.zip
             </button>
             <button
-              onClick={() => downloadZip(result.links!.en, "en", result.batchDate)}
-              className="rounded-xl border border-zinc-700 bg-black/30 hover:border-sky-400/40 hover:bg-sky-400/5 px-4 py-3 text-center transition-colors group"
+              onClick={() =>
+                downloadZip(result.links!.en, "en", result.batchDate)
+              }
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 hover:text-sky-300 hover:bg-sky-400/5 border border-zinc-800 hover:border-sky-400/30 rounded-lg px-2.5 py-1.5 transition-all"
             >
-              <div className="text-[10px] text-zinc-500 group-hover:text-sky-300 font-bold">
-                🇬🇧 Pack EN
-              </div>
-              <div className="text-[10px] text-zinc-600 mt-0.5">.zip</div>
+              🇬🇧 EN.zip
             </button>
           </div>
         </div>
-
-        <button
-          onClick={() => setResult(null)}
-          className="text-xs text-zinc-500 hover:text-zinc-300 underline"
-        >
-          Re-publier
-        </button>
       </div>
     );
   }
@@ -160,23 +164,29 @@ export default function PublishButton({
       <button
         onClick={publish}
         disabled={busy}
-        className="w-full rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 disabled:from-zinc-800 disabled:to-zinc-900 disabled:text-zinc-500 px-6 py-5 text-base font-black text-black transition-all shadow-lg shadow-emerald-500/20"
+        className="group relative inline-flex items-center gap-3 rounded-xl bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:from-zinc-800 disabled:to-zinc-900 disabled:text-zinc-500 px-5 py-3 text-sm font-bold text-black transition-all shadow-[0_4px_20px_-4px_rgba(251,191,36,0.3)] hover:shadow-[0_6px_30px_-4px_rgba(251,191,36,0.5)] disabled:shadow-none"
       >
         {busy ? (
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-            Génération PNG en cours… (~{validatedCount * 4}s)
-          </span>
+          <>
+            <span className="inline-block w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+            <span>Génération en cours…</span>
+            <span className="text-[10px] text-zinc-600 font-mono">
+              ~{validatedCount * 4}s
+            </span>
+          </>
         ) : (
           <>
-            🚀 Publier {validatedCount} ad{validatedCount > 1 ? "s" : ""}{" "}
-            validée{validatedCount > 1 ? "s" : ""}
+            <span className="w-2 h-2 rounded-full bg-amber-400 group-hover:bg-amber-300" />
+            <span>Publier {validatedCount} validée{validatedCount > 1 ? "s" : ""}</span>
+            <span className="text-[10px] text-zinc-500 font-mono ml-1">
+              FR + EN
+            </span>
           </>
         )}
       </button>
       {result && !result.ok && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 px-4 py-3 text-sm text-rose-300">
-          ❌ {result.error}
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-xs text-rose-300 max-w-md">
+          {result.error}
         </div>
       )}
     </div>
